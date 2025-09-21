@@ -212,6 +212,33 @@ h2 {
     box-shadow: 0 4px 12px rgba(142, 68, 173, 0.4);
 }
 
+/* Estilos para o container do checkbox */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+    margin-bottom: 25px; /* Aumenta o espaço antes do botão */
+    padding-left: 5px; /* Pequeno recuo */
+}
+
+#open-access-only {
+    margin-right: 10px;
+    width: 15px;
+    height: 15px;
+    accent-color: #667eea;
+    cursor: pointer;
+    transform: translateY(-1px);
+}
+
+.checkbox-label {
+    font-weight: 400; /* Mais sutil */
+    color: #e0e0e0; /* Cor um pouco mais suave */
+    font-size: 0.85rem; /* Menor */
+    cursor: pointer;
+    text-transform: none; /* Normal */
+    letter-spacing: 0;
+}
+
 /* Grupo de botões principais */
 .button-group {
     display: flex;
@@ -909,4 +936,29 @@ select:focus {
     #results-table {
         box-shadow: none;
     }
+}
+
+/* Estilos do Rodapé */
+.main-footer-credits {
+    text-align: center;
+    padding: 25px 20px;
+    margin-top: 30px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.main-footer-credits p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.footer-icon {
+    font-size: 1.2rem;
+    margin-right: 8px;
+    vertical-align: middle;
+    display: inline-block;
+    transform: translateY(-1px);
 }

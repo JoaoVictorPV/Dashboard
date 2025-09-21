@@ -16,11 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchFilter = document.getElementById('search-filter');
     const columnFilter = document.getElementById('column-filter');
     const clearFiltersButton = document.getElementById('clear-filters');
+    const openAccessOnlyCheckbox = document.getElementById('open-access-only');
     
     // Botões de exportação
     const exportHtmlButton = document.getElementById('export-html-button');
-    const exportJsonButton = document.getElementById('export-json-button');
-    const exportCsvButton = document.getElementById('export-csv-button');
     
     // Botões de data
     const last6MonthsButton = document.getElementById('last-6-months');
@@ -45,63 +44,79 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateJournalSelector(journals) {
         journals.forEach(journal => {
             const option = document.createElement('option');
-            option.value = journal.id;
+            option.value = journal.issn; // Usar ISSN como valor
             option.textContent = journal.name;
             journalSelector.appendChild(option);
         });
     }
 
-    // Lista de revistas incorporada diretamente com nomes oficiais do NLM para buscas precisas
     const journals = [
-        { "id": "Seminars in musculoskeletal radiology", "name": "Seminars in Musculoskeletal Radiology" },
-        { "id": "Insights into imaging", "name": "Insights Into Imaging" },
-        { "id": "The British journal of radiology", "name": "British Journal of Radiology" },
-        { "id": "World journal of radiology", "name": "World Journal of Radiology" },
-        { "id": "Japanese journal of radiology", "name": "Japanese Journal of Radiology" },
-        { "id": "Open journal of radiology", "name": "Open Journal of Radiology" },
-        { "id": "Radiologic clinics of North America", "name": "Radiologic Clinics of North America" },
-        { "id": "Magnetic resonance in medicine", "name": "Magnetic Resonance in Medicine" },
-        { "id": "Canadian Association of Radiologists journal", "name": "Canadian Association of Radiologists Journal" },
-        { "id": "Radiology", "name": "Radiology" },
-        { "id": "European radiology", "name": "European Radiology" },
-        { "id": "American journal of roentgenology", "name": "AJR" },
-        { "id": "Journal of magnetic resonance imaging", "name": "JMRI" },
-        { "id": "Investigative radiology", "name": "Investigative Radiology" },
-        { "id": "Radiologia brasileira", "name": "Radiologia Brasileira" },
-        { "id": "Clinical radiology", "name": "Clinical Radiology" },
-        { "id": "Journal of medical Internet research", "name": "JMIRao (J Med Internet Res)" },
-        { "id": "Korean journal of radiology", "name": "Korean Journal of Radiology" },
-        { "id": "The Indian journal of radiology and imaging", "name": "Indian Journal of Radiology and Imaging" },
-        { "id": "The Journal of bone and joint surgery. American volume", "name": "JBJS American" },
-        { "id": "The bone and joint journal", "name": "BJJ" },
-        { "id": "Clinical orthopaedics and related research", "name": "CORR" },
-        { "id": "Acta orthopaedica", "name": "Acta Orthopaedica" },
-        { "id": "Journal of orthopaedic research", "name": "JOR" },
-        { "id": "International orthopaedics", "name": "International Orthopaedics" },
-        { "id": "Revista brasileira de ortopedia", "name": "RBO" },
-        { "id": "Journal of orthopaedic science", "name": "Journal of Orthopaedic Science" },
-        { "id": "Indian journal of orthopaedics", "name": "Indian Journal of Orthopaedics" },
-        { "id": "Orthopaedics and traumatology, surgery and research", "name": "OTSR" },
-        { "id": "Journal of shoulder and elbow surgery", "name": "JSES" },
-        { "id": "Shoulder and elbow", "name": "Shoulder & Elbow" },
-        { "id": "JSES international", "name": "JSES International" },
-        { "id": "Journal of orthopaedic surgery and research", "name": "Journal of Orthopaedic Surgery and Research" },
-        { "id": "Journal of shoulder and elbow surgery", "name": "Journal of Elbow Surgery" },
-        { "id": "The journal of wrist surgery", "name": "Journal of Wrist Surgery" },
-        { "id": "Hand surgery and rehabilitation", "name": "Hand Surgery and Rehabilitation" },
-        { "id": "The Journal of hand surgery", "name": "Journal of Hand Surgery American" },
-        { "id": "The Journal of hand surgery. European volume", "name": "Journal of Hand Surgery European" },
-        { "id": "Journal of hip preservation surgery", "name": "Journal of Hip Preservation Surgery" },
-        { "id": "Hip international", "name": "Hip International" },
-        { "id": "Knee surgery, sports traumatology, arthroscopy", "name": "KSSTA" },
-        { "id": "The knee", "name": "The Knee" },
-        { "id": "Foot and ankle international", "name": "Foot & Ankle International" },
-        { "id": "Foot and ankle surgery", "name": "Foot and Ankle Surgery" },
-        { "id": "The foot", "name": "The Foot" },
-        { "id": "Foot and ankle orthopaedics", "name": "Foot & Ankle Orthopaedics" },
-        { "id": "Radiographics", "name": "Radiographics" },
-        { "id": "Skeletal radiology", "name": "Skeletal Radiology" }
+        { "issn": "1745-3674", "abbr": "Acta Orthop", "name": "Acta Orthopaedica" },
+        { "issn": "2366-004X", "abbr": "Abdom Radiol (NY)", "name": "Abdominal Radiology" },
+        { "issn": "0195-6108", "abbr": "AJNR Am J Neuroradiol", "name": "American Journal of Neuroradiology" },
+        { "issn": "0361-803X", "abbr": "Am J Roentgenol", "name": "American Journal of Roentgenology (AJR)" },
+        { "issn": "0003-4819", "abbr": "Ann Intern Med", "name": "Annals of Internal Medicine" },
+        { "issn": "0959-8138", "abbr": "BMJ", "name": "The BMJ (British Medical Journal)" },
+        { "issn": "2049-4394", "abbr": "Bone Joint J", "name": "Bone & Joint Journal (BJJ)" },
+        { "issn": "0007-1285", "abbr": "Br J Radiol", "name": "British Journal of Radiology" },
+        { "issn": "0846-5371", "abbr": "Can Assoc Radiol J", "name": "Canadian Association of Radiologists Journal" },
+        { "issn": "1869-1439", "abbr": "Clin Neuroradiol", "name": "Clinical Neuroradiology" },
+        { "issn": "0009-921X", "abbr": "Clin Orthop Relat Res", "name": "Clinical Orthopaedics and Related Research (CORR)" },
+        { "issn": "0009-9260", "abbr": "Clin Radiol", "name": "Clinical Radiology" },
+        { "issn": "0938-7994", "abbr": "Eur Radiol", "name": "European Radiology" },
+        { "issn": "1268-7731", "abbr": "Foot Ankle Surg", "name": "Foot and Ankle Surgery" },
+        { "issn": "1071-1007", "abbr": "Foot Ankle Int", "name": "Foot & Ankle International" },
+        { "issn": "2473-0114", "abbr": "Foot Ankle Orthop", "name": "Foot & Ankle Orthopaedics" },
+        { "issn": "0958-2592", "abbr": "Foot (Edinb)", "name": "The Foot" },
+        { "issn": "0016-5107", "abbr": "Gastrointest Endosc", "name": "Gastrointestinal Endoscopy" },
+        { "issn": "2468-1229", "abbr": "Hand Surg Rehabil", "name": "Hand Surgery and Rehabilitation" },
+        { "issn": "1120-7000", "abbr": "Hip Int", "name": "Hip International" },
+        { "issn": "0019-5413", "abbr": "Indian J Orthop", "name": "Indian Journal of Orthopaedics" },
+        { "issn": "0971-3026", "abbr": "Indian J Radiol Imaging", "name": "Indian Journal of Radiology and Imaging" },
+        { "issn": "1869-4101", "abbr": "Insights Imaging", "name": "Insights Into Imaging" },
+        { "issn": "0341-2695", "abbr": "Int Orthop", "name": "International Orthopaedics" },
+        { "issn": "0020-9996", "abbr": "Invest Radiol", "name": "Investigative Radiology" },
+        { "issn": "0098-7484", "abbr": "JAMA", "name": "Journal of the American Medical Association (JAMA)" },
+        { "issn": "2168-6106", "abbr": "JAMA Intern Med", "name": "JAMA Internal Medicine" },
+        { "issn": "0021-9355", "abbr": "J Bone Joint Surg Am", "name": "Journal of Bone & Joint Surgery (JBJS)" },
+        { "issn": "2054-8397", "abbr": "J Hip Preserv Surg", "name": "Journal of Hip Preservation Surgery" },
+        { "issn": "1053-1807", "abbr": "J Magn Reson Imaging", "name": "Journal of Magnetic Resonance Imaging" },
+        { "issn": "1754-9485", "abbr": "BJR Case Rep", "name": "BJR Case Reports" },
+        { "issn": "1759-8478", "abbr": "J Neurointerv Surg", "name": "Journal of NeuroInterventional Surgery" },
+        { "issn": "0949-2658", "abbr": "J Orthop Sci", "name": "Journal of Orthopaedic Science" },
+        { "issn": "0736-0266", "abbr": "J Orthop Res", "name": "Journal of Orthopaedic Research (JOR)" },
+        { "issn": "1749-799X", "abbr": "J Orthop Surg Res", "name": "Journal of Orthopaedic Surgery and Research" },
+        { "issn": "1058-2746", "abbr": "J Shoulder Elbow Surg", "name": "Journal of Shoulder and Elbow Surgery (JSES)" },
+        { "issn": "0278-4297", "abbr": "J Ultrasound Med", "name": "Journal of Ultrasound in Medicine" },
+        { "issn": "2163-3916", "abbr": "J Wrist Surg", "name": "Journal of Wrist Surgery" },
+        { "issn": "2666-6383", "abbr": "JSES Int", "name": "JSES International" },
+        { "issn": "1867-1071", "abbr": "Jpn J Radiol", "name": "Japanese Journal of Radiology" },
+        { "issn": "0968-0160", "abbr": "Knee", "name": "The Knee" },
+        { "issn": "0942-2056", "abbr": "Knee Surg Sports Traumatol Arthrosc", "name": "Knee Surgery, Sports Traumatology, Arthroscopy (KSSTA)" },
+        { "issn": "1229-6929", "abbr": "Korean J Radiol", "name": "Korean Journal of Radiology" },
+        { "issn": "0740-3194", "abbr": "Magn Reson Med", "name": "Magnetic Resonance in Medicine" },
+        { "issn": "1347-3182", "abbr": "Magn Reson Med Sci", "name": "Magnetic Resonance in Medical Sciences" },
+        { "issn": "1078-8956", "abbr": "Nat Med", "name": "Nature Medicine" },
+        { "issn": "1053-8119", "abbr": "Neuroimage", "name": "NeuroImage" },
+        { "issn": "0028-3940", "abbr": "Neuroradiology", "name": "Neuroradiology" },
+        { "issn": "2164-3024", "abbr": "Open J Radiol", "name": "Open Journal of Radiology" },
+        { "issn": "1877-0568", "abbr": "Orthop Traumatol Surg Res", "name": "Orthopaedics & Traumatology: Surgery & Research (OTSR)" },
+        { "issn": "1549-1277", "abbr": "PLoS Med", "name": "PLOS Medicine" },
+        { "issn": "0033-8389", "abbr": "Radiol Clin North Am", "name": "Radiologic Clinics of North America" },
+        { "issn": "0271-5333", "abbr": "Radiographics", "name": "Radiographics" },
+        { "issn": "0100-3984", "abbr": "Radiol Bras", "name": "Radiologia Brasileira" },
+        { "issn": "0033-8419", "abbr": "Radiology", "name": "Radiology" },
+        { "issn": "0100-7203", "abbr": "Rev Bras Ginecol Obstet", "name": "Revista Brasileira de Ginecologia e Obstetrícia" },
+        { "issn": "0102-3616", "abbr": "Rev Bras Ortop", "name": "Revista Brasileira de Ortopedia (RBO)" },
+        { "issn": "1089-7860", "abbr": "Semin Musculoskelet Radiol", "name": "Seminars in Musculoskeletal Radiology" },
+        { "issn": "1758-5732", "abbr": "Shoulder Elbow", "name": "Shoulder & Elbow" },
+        { "issn": "0364-2348", "abbr": "Skeletal Radiol", "name": "Skeletal Radiology" },
+        { "issn": "0140-6736", "abbr": "Lancet", "name": "The Lancet" },
+        { "issn": "0028-4793", "abbr": "N Engl J Med", "name": "The New England Journal of Medicine (NEJM)" },
+        { "issn": "0960-7692", "abbr": "Ultrasound Obstet Gynecol", "name": "Ultrasound in Obstetrics & Gynecology" },
+        { "issn": "1949-8470", "abbr": "World J Radiol", "name": "World Journal of Radiology" }
     ];
+    journals.sort((a, b) => a.name.localeCompare(b.name));
     populateJournalSelector(journals);
 
     // Função para mostrar loading
@@ -176,12 +191,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Função principal de busca no PubMed
     async function searchPubMed() {
-        const selectedJournals = Array.from(journalSelector.selectedOptions).map(option => `"${option.value}"[Journal]`);
+        const selectedJournals = Array.from(journalSelector.selectedOptions).map(option => {
+            const journalData = journals.find(j => j.issn === option.value);
+            return `("${journalData.issn}"[ISSN] OR "${journalData.abbr}"[Journal])`;
+        });
         const startDate = startDateInput.value.replace(/-/g, '/');
         const endDate = endDateInput.value.replace(/-/g, '/');
-        const author = authorInput.value ? `"${authorInput.value}"[Author]` : '';
+        const author = authorInput.value ? `${authorInput.value}[Author]` : '';
         const keywords = keywordsInput.value.split(',').map(k => k.trim()).filter(k => k).map(k => `"${k}"[Title/Abstract]`);
         const maxResults = parseInt(maxResultsSelect.value);
+        const openAccessOnly = openAccessOnlyCheckbox.checked;
 
         let term = [];
         if (keywords.length > 0) term.push(keywords.join(' AND '));
@@ -190,6 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (startDate && endDate) {
             term.push(`("${startDate}":"${endDate}"[Date - Publication])`);
         }
+
+        // O filtro Open Access será aplicado após a busca inicial
+        // if (openAccessOnly) {
+        //     term.push("open access[filter]");
+        // }
 
         if (term.length === 0) {
             alert('Por favor, preencha pelo menos um campo de busca.');
@@ -224,10 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Etapa 3: Mapear e exibir os resultados
             const articles = summaryData.result;
-            const results = Object.keys(articles).filter(key => key !== 'uids').map(uid => {
+            let results = Object.keys(articles).filter(key => key !== 'uids').map(uid => {
                 const article = articles[uid];
                 
-                // Verifica se o artigo tem um PMCID, indicando Open Access
                 const isOpenAccess = () => {
                     if (article.articleids) {
                         return article.articleids.some(id => id.idtype === 'pmc');
@@ -244,6 +267,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     'OPEN ACESS': isOpenAccess() ? 'Sim' : 'Não'
                 };
             });
+
+            // Etapa 4: Filtrar por Open Access se a opção estiver marcada
+            if (openAccessOnly) {
+                results = results.filter(article => article['OPEN ACESS'] === 'Sim');
+            }
 
             hideLoading();
             showResults(results);
@@ -323,65 +351,115 @@ document.addEventListener('DOMContentLoaded', () => {
     function exportToHTML() {
         const html = `
             <!DOCTYPE html>
-            <html>
-            <head><title>Resultados da Busca</title></head>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <title>Resultados da Busca Científica</title>
+                <style>
+                    body {
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                        background-color: #1e3c72;
+                        color: #333;
+                    }
+                    .container {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        background: #f4f7f6;
+                        padding: 25px;
+                        border-radius: 15px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                    }
+                    h1 {
+                        color: #2a5298;
+                        font-size: 28px;
+                        border-bottom: 3px solid #667eea;
+                        padding-bottom: 10px;
+                        margin-bottom: 20px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-size: 16px;
+                    }
+                    th, td {
+                        padding: 15px;
+                        text-align: left;
+                        border-bottom: 1px solid #ddd;
+                    }
+                    th {
+                        background-color: #667eea;
+                        color: white;
+                        font-size: 18px;
+                    }
+                    tr:nth-child(even) {
+                        background-color: #e9ecef;
+                    }
+                    tr:hover {
+                        background-color: #d4d8f0;
+                    }
+                    a {
+                        color: #667eea;
+                        text-decoration: none;
+                        font-weight: bold;
+                    }
+                    a:hover {
+                        text-decoration: underline;
+                    }
+                    .open-access-yes {
+                        color: #27ae60;
+                        font-weight: bold;
+                    }
+                    .open-access-no {
+                        color: #c0392b;
+                    }
+                    .footer {
+                        text-align: center;
+                        margin-top: 25px;
+                        font-size: 12px;
+                        color: #777;
+                    }
+                </style>
+            </head>
             <body>
-                <h1>Resultados da Busca</h1>
-                <table border="1">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Título</th>
-                            <th>Revista</th>
-                            <th>Autores</th>
-                            <th>Link</th>
-                            <th>Open Access</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filteredResults.map(article => `
+                <div class="container">
+                    <h1>Resultados da Busca Científica</h1>
+                    <table>
+                        <thead>
                             <tr>
-                                <td>${formatDate(article['DATA DE PUBLICACAO'])}</td>
-                                <td>${article['TITULO DA PUBLICACAO']}</td>
-                                <td>${article['REVISTA']}</td>
-                                <td>${article['AUTORES']}</td>
-                                <td><a href="${article['LINK CANONICO']}" target="_blank">Acessar</a></td>
-                                <td>${article['OPEN ACESS']}</td>
+                                <th>Data</th>
+                                <th>Título</th>
+                                <th>Revista</th>
+                                <th>Autores</th>
+                                <th>Link</th>
+                                <th>Open Access</th>
                             </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            ${filteredResults.map(article => `
+                                <tr>
+                                    <td>${formatDate(article['DATA DE PUBLICACAO'])}</td>
+                                    <td>${article['TITULO DA PUBLICACAO']}</td>
+                                    <td>${article['REVISTA']}</td>
+                                    <td>${article['AUTORES']}</td>
+                                    <td><a href="${article['LINK CANONICO']}" target="_blank">Acessar</a></td>
+                                    <td class="${article['OPEN ACESS'] === 'Sim' ? 'open-access-yes' : 'open-access-no'}">${article['OPEN ACESS']}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="footer">
+                        <p>Tabela gerada com ferramenta de pesquisa desenvolvida pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</p>
+                    </div>
+                </div>
             </body>
             </html>
         `;
         const blob = new Blob([html], { type: 'text/html' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'resultados.html';
-        a.click();
-    }
-
-    function exportToJSON() {
-        const blob = new Blob([JSON.stringify(filteredResults, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'resultados.json';
-        a.click();
-    }
-
-    function exportToCSV() {
-        const headers = ['DATA DE PUBLICACAO', 'TITULO DA PUBLICACAO', 'REVISTA', 'AUTORES', 'LINK CANONICO', 'OPEN ACESS'];
-        const csvContent = [
-            headers.join(','),
-            ...filteredResults.map(article => 
-                headers.map(header => `"${(article[header] || '').toString().replace(/"/g, '""')}"`).join(',')
-            )
-        ].join('\n');
-        
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'resultados.csv';
+        a.download = 'resultados_busca.html';
         a.click();
     }
 
@@ -461,6 +539,4 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Event listeners para exportação
     exportHtmlButton.addEventListener('click', exportToHTML);
-    exportJsonButton.addEventListener('click', exportToJSON);
-    exportCsvButton.addEventListener('click', exportToCSV);
 });

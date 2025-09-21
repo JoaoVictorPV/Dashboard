@@ -64,6 +64,11 @@
             <input type="text" id="keywords" placeholder="Separar por vírgula">
             <br>
 
+            <div class="checkbox-container">
+                <input type="checkbox" id="open-access-only" name="open-access-only">
+                <label for="open-access-only" class="checkbox-label">Apenas artigos Open Access</label>
+            </div>
+
             <div class="button-group">
                 <button id="search-button">Pesquisar</button>
             </div>
@@ -100,8 +105,6 @@
                 
                 <div class="export-controls">
                     <button id="export-html-button">Exportar HTML</button>
-                    <button id="export-json-button">Exportar JSON</button>
-                    <button id="export-csv-button">Exportar CSV</button>
                 </div>
             </div>
             
@@ -123,6 +126,9 @@
             </div>
         </div>
     </div>
+    <footer class="main-footer-credits">
+        <p><span class="footer-icon">🔬</span>Website desenvolvido pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</p>
+    </footer>
 <script src="./script.js?v=2"></script>
 </body>
 </html>
