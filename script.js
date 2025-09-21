@@ -226,13 +226,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const articles = summaryData.result;
             const results = Object.keys(articles).filter(key => key !== 'uids').map(uid => {
                 const article = articles[uid];
+                
+                // Verifica se o artigo tem um PMCID, indicando Open Access
+                const isOpenAccess = () => {
+                    if (article.articleids) {
+                        return article.articleids.some(id => id.idtype === 'pmc');
+                    }
+                    return false;
+                };
+
                 return {
                     'DATA DE PUBLICACAO': article.pubdate,
                     'TITULO DA PUBLICACAO': article.title,
                     'REVISTA': article.source,
                     'AUTORES': article.authors.map(a => a.name).join(', '),
                     'LINK CANONICO': `https://pubmed.ncbi.nlm.nih.gov/${uid}/`,
-                    'OPEN ACESS': 'N/A' // A API ESummary não fornece essa informação diretamente
+                    'OPEN ACESS': isOpenAccess() ? 'Sim' : 'Não'
                 };
             });
 
