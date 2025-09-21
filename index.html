@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Journal Search - Sistema de Busca Científica</title>
+    <link rel="stylesheet" href="./style.css?v=2">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content">
+            <img src="logo.jpg" alt="Logo" class="header-logo">
+            <h1 class="header-title">Dashboard de Revistas Científicas</h1>
+        </div>
+    </header>
+    <div id="dashboard">
+        <div id="journal-management">
+            <h2>Configuração da Busca</h2>
+            <label for="journal-selector">Selecionar Revistas:</label>
+            <select id="journal-selector" multiple>
+            </select>
+            <br>
+
+            <label for="start-date">Data Inicial:</label>
+            <input type="date" id="start-date">
+
+            <label for="end-date">Data Final:</label>
+            <input type="date" id="end-date">
+            <br>
+
+            <div class="date-buttons-group">
+                <div class="recent-periods">
+                    <button id="last-6-months">6 Meses</button>
+                    <button id="last-1-year">1 Ano</button>
+                    <button id="last-18-months">18 Meses</button>
+                    <button id="last-2-years">2 Anos</button>
+                </div>
+                <div class="year-ranges">
+                    <button id="range-2022-2024">2022-2024</button>
+                    <button id="range-2019-2021">2019-2021</button>
+                    <button id="range-2016-2018">2016-2018</button>
+                    <button id="range-2013-2015">2013-2015</button>
+                    <button id="range-2010-2012">2010-2012</button>
+                </div>
+            </div>
+            <br>
+
+            <label for="max-results">Máximo de Resultados:</label>
+            <select id="max-results">
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="200" selected>200</option>
+                <option value="500">500</option>
+                <option value="1000">1000</option>
+                <option value="5000">5000</option>
+            </select>
+            <br>
+
+            <label for="author">Autor:</label>
+            <input type="text" id="author" placeholder="Nome do autor">
+            <br>
+
+            <label for="keywords">Palavras-chave:</label>
+            <input type="text" id="keywords" placeholder="Separar por vírgula">
+            <br>
+
+            <div class="button-group">
+                <button id="search-button">Pesquisar</button>
+            </div>
+        </div>
+        
+        <div id="search-results">
+            <h2>Resultados da Busca</h2>
+            <div id="loading" style="display: none;">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-message">
+                        <span id="loading-message-text">Buscando no PubMed...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="results-info" style="display: none;">
+                <p>Total de artigos encontrados: <span id="total-count">0</span></p>
+            </div>
+            
+            <div id="table-controls" style="display: none;">
+                <div class="filter-controls">
+                    <input type="text" id="search-filter" placeholder="Filtrar resultados...">
+                    <select id="column-filter">
+                        <option value="">Todas as colunas</option>
+                        <option value="TITULO DA PUBLICACAO">Título</option>
+                        <option value="AUTORES">Autores</option>
+                        <option value="REVISTA">Revista</option>
+                        <option value="DATA DE PUBLICACAO">Data</option>
+                        <option value="OPEN ACESS">Open Access</option>
+                    </select>
+                    <button id="clear-filters">Limpar Filtros</button>
+                </div>
+                
+                <div class="export-controls">
+                    <button id="export-html-button">Exportar HTML</button>
+                    <button id="export-json-button">Exportar JSON</button>
+                    <button id="export-csv-button">Exportar CSV</button>
+                </div>
+            </div>
+            
+            <div id="table-container">
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th data-column="DATA DE PUBLICACAO" class="sortable col-date">Data <span class="sort-arrow"></span></th>
+                            <th data-column="TITULO DA PUBLICACAO" class="sortable col-title">Título <span class="sort-arrow"></span></th>
+                            <th data-column="REVISTA" class="sortable col-journal">Revista <span class="sort-arrow"></span></th>
+                            <th data-column="AUTORES" class="sortable col-authors">Autores <span class="sort-arrow"></span></th>
+                            <th data-column="LINK CANONICO" class="col-link">Link</th>
+                            <th data-column="OPEN ACESS" class="sortable col-access">Open Access <span class="sort-arrow"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+<script src="./script.js?v=2"></script>
+</body>
+</html>
