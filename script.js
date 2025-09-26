@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { "issn": "0001-6926", "abbr": "Acta Med Port", "name": "Acta Médica Portuguesa" },
         { "issn": "0717-9308", "abbr": "Acta Radiol Port", "name": "Acta Radiológica Portuguesa" },
         { "issn": "0195-6108", "abbr": "AJNR Am J Neuroradiol", "name": "American Journal of Neuroradiology" },
-        { "issn": "0361-803X", "abbr": "Am J Roentgenol", "name": "American Journal of Roentgenology (AJR)" },
+        { "issn": "1546-3141", "abbr": "Am J Roentgenol", "name": "American Journal of Roentgenology (AJR)" },
         { "issn": "0363-6143", "abbr": "Am J Sports Med", "name": "The American Journal of Sports Medicine" },
         { "issn": "0717-2161", "abbr": "An Radiol Mexico", "name": "Anales de Radiología México" },
         { "issn": "0003-4819", "abbr": "Ann Intern Med", "name": "Annals of Internal Medicine" },
