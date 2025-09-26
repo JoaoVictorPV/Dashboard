@@ -376,11 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!searchAllPubmed && !searchAllJournals && selectedOptions.length > 0) {
                 const selectedJournalObjects = selectedOptions.map(value => journals.find(j => j.issn === value)).filter(Boolean);
                 const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-                const validNormalizedAbbrs = new Set(selectedJournalObjects.map(j => normalize(j.abbr)));
+                const validNormalizedAbbrs = selectedJournalObjects.map(j => normalize(j.abbr));
                 
                 results = results.filter(article => {
                     const normalizedArticleJournal = normalize(article['REVISTA']);
-                    return validNormalizedAbbrs.has(normalizedArticleJournal);
+                    return validNormalizedAbbrs.some(abbr => normalizedArticleJournal.includes(abbr));
                 });
             }
 
