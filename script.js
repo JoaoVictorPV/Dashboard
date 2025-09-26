@@ -461,6 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funções de exportação
     function exportToHTML() {
+        const searchSummaryContent = searchSummaryDiv.innerHTML;
         const html = `
             <!DOCTYPE html>
             <html lang="pt-BR">
@@ -472,13 +473,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                         margin: 0;
                         padding: 20px;
-                        background-color: #1e3c72;
+                        background-color: #f4f7f6;
                         color: #333;
                     }
                     .container {
                         max-width: 1200px;
                         margin: 0 auto;
-                        background: #f4f7f6;
+                        background: #ffffff;
                         padding: 25px;
                         border-radius: 15px;
                         box-shadow: 0 10px 30px rgba(0,0,0,0.1);
@@ -489,6 +490,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         border-bottom: 3px solid #667eea;
                         padding-bottom: 10px;
                         margin-bottom: 20px;
+                    }
+                    .search-summary {
+                        background-color: #e9ecef;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin-bottom: 20px;
+                        font-size: 14px;
+                        color: #495057;
+                        border: 1px solid #dee2e6;
                     }
                     table {
                         width: 100%;
@@ -537,6 +547,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <body>
                 <div class="container">
                     <h1>Resultados da Busca Científica</h1>
+                    <div class="search-summary">
+                        <p><strong>Total de artigos encontrados: ${currentResults.length}</strong></p>
+                        <p>${searchSummaryContent}</p>
+                    </div>
                     <table>
                         <thead>
                             <tr>
