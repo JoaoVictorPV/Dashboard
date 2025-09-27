@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Journal Search - Sistema de Busca Científica</title>
+    <link rel="stylesheet" href="./lib/choices/choices.min.css">
     <link rel="stylesheet" href="./style.css?v=2">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +10,8 @@
 <body>
     <header class="main-header">
         <div class="header-content">
-            <img src="logo.jpg" alt="Logo" class="header-logo">
-            <h1 class="header-title">Dashboard de Revistas Científicas</h1>
+            <img src="./logo.png" alt="Logo" class="header-logo">
+            <h1 class="header-title">Dashboard de Revistas Médicas</h1>
         </div>
     </header>
     <div id="dashboard">
@@ -45,17 +46,6 @@
             </div>
             <br>
 
-            <label for="max-results">Máximo de Resultados:</label>
-            <select id="max-results">
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="200" selected>200</option>
-                <option value="500">500</option>
-                <option value="1000">1000</option>
-                <option value="5000">5000</option>
-            </select>
-            <br>
-
             <label for="author">Autor:</label>
             <input type="text" id="author" placeholder="Nome do autor">
             <br>
@@ -71,6 +61,7 @@
 
             <div class="button-group">
                 <button id="search-button">Pesquisar</button>
+                <button id="clear-search-button" style="background: linear-gradient(135deg, #e74c3c, #ec7063) !important;">Limpar Parâmetros</button>
             </div>
         </div>
         
@@ -87,6 +78,7 @@
             
             <div id="results-info" style="display: none;">
                 <p>Total de artigos encontrados: <span id="total-count">0</span></p>
+                <div id="search-summary" class="search-summary-class"></div>
             </div>
             
             <div id="table-controls" style="display: none;">
@@ -108,6 +100,7 @@
                 </div>
             </div>
             
+            <div id="message-container" class="message-container" style="display: none;"></div>
             <div id="table-container">
                 <table id="results-table">
                     <thead>
@@ -124,11 +117,16 @@
                     </tbody>
                 </table>
             </div>
+            <div id="pagination-container" class="pagination-container"></div>
         </div>
     </div>
     <footer class="main-footer-credits">
         <p><span class="footer-icon">🔬</span>Website desenvolvido pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</p>
+        <div id="visitor-counter">
+            <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fjoaovictorpv.github.io%2FDashboard%2Fexperimento%2F&label=Visitantes&countColor=%2364FFDA&style=flat" alt="Visitor Counter"/>
+        </div>
     </footer>
+<script src="./lib/choices/choices.min.js"></script>
 <script src="./script.js?v=2"></script>
 </body>
 </html>
