@@ -253,10 +253,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Tenta criar um objeto Date. Funciona para "2024 Jul 15", "2024-07-15", etc.
         const date = new Date(dateString);
-        if (!isNaN(date.getTime())) {
+        if (!isNaN(date.getTime()) && dateString.match(/\d/g) && dateString.match(/\d/g).length >= 2) {
             const year = date.getFullYear().toString().slice(-2);
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
+            // Verifica se o dia foi especificado, senão usa 25
+            const day = dateString.match(/\b\d{1,2}\b/) ? date.getDate().toString().padStart(2, '0') : '25';
             return `${day}/${month}/${year}`;
         }
 
@@ -269,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const cleanedString = dateString.toLowerCase().replace(' de ', ' ');
-        const parts = cleanedString.split(/[\s,]+/); // Divide por espaço ou vírgula
+        const parts = cleanedString.split(/[\s,]+/);
         
         let year = '', month = '', day = '';
 
@@ -289,10 +290,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (year && month) {
-            return `${day || '01'}/${month}/${year}`;
+            return `${day || '25'}/${month}/${year}`; // Usa dia 25 como padrão
         }
 
-        return dateString; // Retorna o original se a análise falhar
+        return dateString;
     }
 
     // Função para renderizar a tabela
@@ -664,15 +665,18 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFilters();
     });
     
-    // Event listeners para ordenação
-    document.querySelectorAll('.sortable').forEach(header => {
-        const handleSort = () => {
+    // Event listener para ordenação (usando delegação de evento)
+    function handleSortEvent(event) {
+        const header = event.target.closest('.sortable');
+        if (header) {
+            event.preventDefault(); // Previne "ghost clicks" em dispositivos de toque
             const column = header.getAttribute('data-column');
             sortTable(column);
-        };
-        header.addEventListener('click', handleSort);
-        header.addEventListener('touchend', handleSort); // Adiciona evento de toque
-    });
+        }
+    }
+
+    resultsTable.querySelector('thead').addEventListener('click', handleSortEvent);
+    resultsTable.querySelector('thead').addEventListener('touchend', handleSortEvent);
     
     // Event listeners para exportação
     exportHtmlButton.addEventListener('click', exportToHTML);
@@ -798,12 +802,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <table id="modal-results-table">
                 <thead>
                     <tr>
-                        <th class="col-date">Data</th>
-                        <th class="col-title">Título</th>
-                        <th class="col-journal">Revista</th>
-                        <th class="col-authors">Autores</th>
+                        <th data-column="DATA DE PUBLICACAO" class="sortable col-date">Data <span class="sort-arrow"></span></th>
+                        <th data-column="TITULO DA PUBLICACAO" class="sortable col-title">Título <span class="sort-arrow"></span></th>
+                        <th data-column="REVISTA" class="sortable col-journal">Revista <span class="sort-arrow"></span></th>
+                        <th data-column="AUTORES" class="sortable col-authors">Autores <span class="sort-arrow"></span></th>
                         <th class="col-link">Link</th>
-                        <th class="col-access">Open Access</th>
+                        <th data-column="OPEN ACESS" class="sortable col-access">Open Access <span class="sort-arrow"></span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -835,7 +839,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     fullscreenButton.addEventListener('click', () => {
-        renderModalTable(filteredResults); // Renderiza a tabela com todos os resultados filtrados
+        renderModalTable(filteredResults);
+        const modalThead = modalTableContainer.querySelector('thead');
+        if (modalThead) {
+            modalThead.removeEventListener('click', handleSortEvent); // Remove listener antigo para evitar duplicatas
+            modalThead.removeEventListener('touchend', handleSortEvent);
+            modalThead.addEventListener('click', handleSortEvent);
+            modalThead.addEventListener('touchend', handleSortEvent);
+        }
         modalOverlay.style.display = 'flex';
     });
 
