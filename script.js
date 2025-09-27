@@ -666,13 +666,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Event listener para ordenação (usando delegação de evento)
+    let touchEventFired = false;
     function handleSortEvent(event) {
+        if (event.type === 'touchend') {
+            touchEventFired = true;
+        }
+        // O evento de clique é ignorado se um toque acabou de acontecer
+        if (event.type === 'click' && touchEventFired) {
+            touchEventFired = false;
+            return;
+        }
+
         const header = event.target.closest('.sortable');
         if (header) {
-            event.preventDefault(); // Previne "ghost clicks" em dispositivos de toque
             const column = header.getAttribute('data-column');
             sortTable(column);
         }
+        
+        // Reseta o flag após um pequeno atraso
+        setTimeout(() => {
+            touchEventFired = false;
+        }, 500);
     }
 
     resultsTable.querySelector('thead').addEventListener('click', handleSortEvent);

@@ -630,11 +630,11 @@ input:checked + .slider:before {
 
 /* Larguras fixas das colunas */
 .col-date { width: 10%; }
-.col-title { width: 35%; }
+.col-title { width: 30%; } /* Reduzido */
 .col-journal { width: 20%; }
-.col-authors { width: 20%; }
-.col-link { width: 7%; text-align: center; }
-.col-access { width: 8%; text-align: center; }
+.col-authors { width: 15%; } /* Reduzido */
+.col-link { width: 12%; text-align: center; } /* Aumentado */
+.col-access { width: 13%; text-align: center; } /* Aumentado */
 
 /* Layout estático do painel esquerdo */
 #journal-management {
@@ -678,7 +678,7 @@ input:checked + .slider:before {
     border-bottom: 1px solid #555;
     vertical-align: top;
     white-space: normal; /* Mostrar todo o conteúdo */
-    word-wrap: break-word; /* Quebrar palavras longas */
+    word-break: break-word; /* Força a quebra de palavras longas */
     color: #e0e0e0;
 }
 
