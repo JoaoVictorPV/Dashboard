@@ -1168,3 +1168,245 @@ select:focus {
     border-color: #20c997;
     cursor: default;
 }
+
+/* === NOVOS ESTILOS GERAIS E PÁGINAS === */
+
+/* Container principal para centralizar conteúdo */
+.container {
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Estilos de Botões Genéricos */
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #20c997;
+    color: #0a192f;
+    border: 1px solid #20c997;
+}
+
+.btn-primary:hover {
+    background-color: transparent;
+    color: #20c997;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: #ccd6f6;
+    border: 1px solid #233554;
+}
+
+.btn-secondary:hover {
+    background-color: #233554;
+}
+
+
+/* Landing Page (index.html) */
+.hero {
+    text-align: center;
+    padding: 60px 0;
+}
+
+.hero h2 {
+    font-size: 2.8rem;
+    color: #ccd6f6;
+    margin-bottom: 20px;
+    border: none;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    color: #8892b0;
+    max-width: 600px;
+    margin: 0 auto 30px;
+}
+
+.features {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.features h3 {
+    font-size: 2rem;
+    color: #ccd6f6;
+    margin-bottom: 40px;
+}
+
+.feature-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 30px;
+}
+
+.feature-item {
+    background: #112240;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #233554;
+}
+
+.feature-item h4 {
+    font-size: 1.4rem;
+    color: #ccd6f6;
+    margin-bottom: 15px;
+}
+
+.feature-item p {
+    color: #8892b0;
+}
+
+
+/* Página de Login (login.html) */
+.login-container {
+    max-width: 400px;
+    margin: 60px auto;
+    padding: 40px;
+    background: #112240;
+    border: 1px solid #233554;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.login-container h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    border: none;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #ccd6f6;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #233554;
+    border-radius: 4px;
+    background: #0a192f;
+    color: #e6f1ff;
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #20c997;
+}
+
+.login-container button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.error-message {
+    color: #e74c3c;
+    text-align: center;
+    margin-top: 15px;
+    display: none; /* Oculto por padrão */
+}
+
+
+/* Portal de Conteúdo (portal.html) */
+.main-header .header-content {
+    justify-content: space-between; /* Alinha itens nas extremidades */
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+}
+
+.welcome-section, .dashboard-access, .video-content {
+    background: #112240;
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid #233554;
+    margin-bottom: 30px;
+}
+
+.welcome-section h2, .dashboard-access h3, .video-content h3 {
+    border: none;
+    text-align: left;
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+    color: #ccd6f6;
+}
+
+.welcome-section p, .dashboard-access p {
+    color: #8892b0;
+    font-size: 1.1rem;
+}
+
+.dashboard-access {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.video-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.video-item-placeholder {
+    background: #0a192f;
+    border: 1px dashed #233554;
+    border-radius: 4px;
+    height: 180px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #8892b0;
+}
+
+/* === AJUSTES DE RESPONSIVIDADE ADICIONAIS === */
+
+@media (max-width: 992px) {
+    .dashboard-access {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero h2 {
+        font-size: 2rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+    }
+
+    .login-container {
+        padding: 20px;
+    }
+
+    .header-title {
+        font-size: 1.5rem;
+    }
+
+    .main-header .header-content {
+        flex-direction: row; /* Mantém na mesma linha */
+        justify-content: space-between;
+    }
+}

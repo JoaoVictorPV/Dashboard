@@ -1,0 +1,102 @@
+==================================================================
+PLANO DE IMPLEMENTAÇÃO TÉCNICA - PROJETO DASHBOARD (AXIS MINERVA)
+==================================================================
+
+Este documento detalha os passos técnicos para transformar o protótipo do dashboard em uma aplicação web completa, segura e monetizada, utilizando Firebase e Stripe.
+
+---
+### SEÇÃO 1: SETUP DA INFRAESTRUTURA (FIREBASE)
+---
+
+1.1. **Criação do Projeto:** Acessar o console do Firebase (firebase.google.com) e criar um novo projeto.
+1.2. **Ativar Firebase Authentication:** No console, ir para a seção "Authentication", ativar o serviço e habilitar o método de login "Email/Senha".
+1.3. **Ativar Cloud Firestore:** Ir para a seção "Firestore Database", criar um novo banco de dados em modo de produção (com regras de segurança restritas por padrão).
+1.4. **Estrutura de Dados (Coleções no Firestore):**
+    - `users`: Para armazenar informações adicionais dos usuários. Cada documento terá o ID do usuário do Authentication. Campos: `email`, `name`, `subscriptionStatus` ('none', 'active', 'canceled'), `stripeCustomerId`.
+    - `presets`: Para armazenar os pre-sets de busca. Cada documento terá campos como `userId` (para vincular ao usuário), `presetName`, e os `searchParams` (objeto com os filtros da busca).
+1.5. **Ativar Firebase Hosting:** Ir para a seção "Hosting", criar um site e seguir as instruções. Isso nos dará uma URL `projeto.web.app`.
+1.6. **Ativar Cloud Functions:** Essencial para a comunicação segura com o Stripe. Requer a instalação do Firebase CLI e a inicialização das funções no projeto local.
+
+---
+### SEÇÃO 2: IMPLEMENTAÇÃO DA AUTENTICAÇÃO REAL
+---
+
+2.1. **Instalar SDK do Firebase:** Adicionar o SDK do Firebase (JavaScript) ao projeto.
+2.2. **Inicializar Firebase:** Configurar o frontend com as chaves do projeto Firebase.
+2.3. **Refatorar Login:** Substituir a lógica de `login.js` fictício pela função `signInWithEmailAndPassword()` do Firebase SDK.
+2.4. **Criar Página de Cadastro:** Criar uma página `cadastro.html` e usar a função `createUserWithEmailAndPassword()` para registrar novos usuários. Ao criar, também adicionar um documento correspondente na coleção `users` do Firestore.
+2.5. **Implementar Logout:** Criar uma função de logout que chama `signOut()`.
+2.6. **Proteger Rotas (Guardas):** Substituir a verificação do `sessionStorage` pela função `onAuthStateChanged()`. Esta função é um "ouvinte" que informa em tempo real se o usuário está logado ou não. Se não estiver, redireciona para `login.html`.
+
+---
+### SEÇÃO 3: IMPLEMENTAÇÃO DA FUNCIONALIDADE DE PRE-SETS
+---
+
+3.1. **Salvar Pre-set:** Na interface do `dashboard.html`, criar um botão "Salvar Busca". Ao clicar:
+    - Obter o `uid` do usuário atualmente logado (`firebase.auth().currentUser.uid`).
+    - Montar um objeto com os parâmetros da busca.
+    - Usar a função `addDoc()` do Firestore SDK para adicionar um novo documento à coleção `presets`, incluindo o `uid` do usuário.
+3.2. **Carregar Pre-sets:** Ao carregar o dashboard:
+    - Obter o `uid` do usuário.
+    - Fazer uma consulta (query) na coleção `presets` usando `where('userId', '==', uid)`.
+    - Exibir os pre-sets retornados em uma lista para o usuário poder selecioná-los.
+3.3. **Datas Dinâmicas:** A lógica para calcular "últimos 6 meses" continuará no frontend. O pre-set salvará a *instrução* ("last6months"), e o `dashboard.js` a interpretará no momento de executar a busca.
+
+---
+### SEÇÃO 4: IMPLEMENTAÇÃO DA MONETIZAÇÃO (STRIPE COM CARTÃO E PIX)
+---
+
+Esta seção detalha a integração com o Stripe para aceitar tanto assinaturas recorrentes (Cartão de Crédito) quanto pagamentos manuais a cada ciclo (PIX).
+
+4.1. **Configurar Stripe:**
+    - Criar uma conta no Stripe. No dashboard, criar um "Produto" com um "Preço" recorrente (ex: mensal).
+    - Ativar os métodos de pagamento desejados nas configurações: "Cartões" e "PIX".
+
+4.2. **Checkout no Frontend:**
+    - Na página de assinatura, oferecer duas opções claras ao usuário: "Assinatura Recorrente (Cartão de Crédito)" e "Pagamento Único por 30 dias (PIX)".
+    - A lógica de clique em cada botão chamará uma Cloud Function específica para iniciar o processo de pagamento.
+
+4.3. **Fluxo de Pagamento (Cloud Functions):**
+    - **Para Cartão de Crédito (createSubscriptionCheckout):**
+        - A função cria uma `Stripe Checkout Session` no modo `subscription`.
+        - Retorna a URL de checkout para o frontend, que redireciona o usuário. O pagamento é recorrente e automático.
+    - **Para PIX (createPixInvoice):**
+        - A função cria um `Stripe Customer` (se não existir), cria uma `Invoice` (fatura) para o produto de 30 dias e finaliza a fatura.
+        - A API do Stripe retornará os dados do PIX (QR Code, Copia e Cola, tempo de expiração).
+        - A função retorna esses dados para o frontend.
+        - O frontend exibe o QR Code e uma mensagem instruindo o usuário a pagar. A página pode verificar periodicamente o status do pagamento ou instruir o usuário a voltar após o pagamento.
+
+4.4. **Webhook Centralizado (Ponto Crítico):**
+    - A mesma Cloud Function de webhook servirá para ambos os métodos de pagamento.
+    - **Evento Recebido:** O Stripe enviará o evento `invoice.payment_succeeded` tanto para pagamentos de cartão quanto para PIX.
+    - **Lógica do Webhook:**
+        1. Recebe o evento do Stripe e verifica sua autenticidade.
+        2. Extrai o `stripeCustomerId` do evento.
+        3. Encontra o usuário correspondente no Firestore pelo `stripeCustomerId`.
+        4. **Atualiza o Documento do Usuário:**
+           - Define `subscriptionStatus: 'active'`.
+           - Calcula e define a data de validade: `subscriptionEndDate: dataDoPagamento + 30 dias`.
+        - Esta lógica unificada garante que, independentemente do método, a conta seja ativada corretamente.
+
+4.5. **Gerenciamento do Ciclo de Vida da Assinatura (Conta ON/OFF):**
+    - O acesso do usuário ao conteúdo restrito dependerá de duas condições: estar autenticado E ter uma assinatura válida.
+    - **Verificação no Login/Acesso:** A função "Guarda de Rotas" (`onAuthStateChanged`) será modificada:
+        1. Verifica se o usuário está logado.
+        2. Se sim, lê o documento do usuário no Firestore.
+        3. Compara o campo `subscriptionEndDate` com a data atual.
+        4. **Se `subscriptionEndDate` for anterior à data atual:**
+           - O acesso é bloqueado.
+           - O usuário é redirecionado para a página de renovação da assinatura.
+           - (Opcional) O `subscriptionStatus` pode ser atualizado para `expired`.
+        5. **Se a data for válida,** o acesso é permitido.
+    - **Lembretes de Cobrança:** Para o PIX, como a renovação é manual, é crucial enviar lembretes. Podemos usar uma Cloud Function agendada ("Cron Job") para rodar diariamente, verificar quais assinaturas expiram nos próximos dias e enviar um e-mail de lembrete para o usuário.
+
+---
+### SEÇÃO 5: DEPLOY E PRODUÇÃO
+---
+
+5.1. **Instalar Firebase CLI:** Instalar as ferramentas de linha de comando do Firebase (`npm install -g firebase-tools`).
+5.2. **Configurar Deploy:** Executar `firebase init` na pasta do projeto, selecionando Hosting e Functions. Isso cria o arquivo `firebase.json`.
+5.3. **Deploy:** Executar o comando `firebase deploy` para publicar o site e as funções na nuvem.
+5.4. **Domínio Personalizado:** No console do Firebase Hosting, ir em "Add custom domain" e seguir os passos para apontar seu domínio `.com` para o site hospedado.
+5.5. **Regras de Segurança:** Antes do lançamento, refinar as regras de segurança do Firestore para garantir que um usuário só possa ler/escrever seus próprios dados (pre-sets) e não os de outros.
