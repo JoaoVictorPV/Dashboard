@@ -681,16 +681,17 @@ input:checked + .slider:before {
     background-color: #555;
 }
 
-.open-access-icon-v, .open-access-icon-x {
-    font-weight: bold;
-    font-size: 1.2rem;
+.icon-v, .icon-x {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
 }
 
-.open-access-icon-v {
+.icon-v {
     color: #27ae60; /* Verde */
 }
 
-.open-access-icon-x {
+.icon-x {
     color: #e74c3c; /* Vermelho */
 }
 
