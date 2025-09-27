@@ -692,7 +692,7 @@ input:checked + .slider:before {
 }
 
 .icon-x {
-    color: #e74c3c; /* Vermelho */
+    color: #000000; /* Preto */
 }
 
 /* Links */
