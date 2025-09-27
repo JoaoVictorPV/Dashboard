@@ -40,8 +40,8 @@ body {
 .header-title {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #64ffda; /* Azul ciano brilhante */
-    text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+    color: #20c997; /* Verde-azulado */
+    text-shadow: 0 0 10px rgba(32, 201, 151, 0.3);
     letter-spacing: -0.5px;
     margin: 0;
 }
@@ -103,8 +103,8 @@ h2 {
 #journal-management input:focus,
 #journal-management select:focus {
     outline: none;
-    border-color: #64ffda;
-    box-shadow: 0 0 5px rgba(100, 255, 218, 0.3);
+    border-color: #20c997;
+    box-shadow: 0 0 5px rgba(32, 201, 151, 0.3);
 }
 
 #journal-management input::placeholder {
@@ -152,8 +152,8 @@ h2 {
 
 .recent-periods button {
     background: transparent;
-    color: #64ffda;
-    border: 1px solid #64ffda;
+    color: #20c997;
+    border: 1px solid #20c997;
     padding: 8px 14px;
     border-radius: 4px;
     cursor: pointer;
@@ -163,13 +163,13 @@ h2 {
 }
 
 .recent-periods button:hover {
-    background: rgba(100, 255, 218, 0.1);
+    background: rgba(32, 201, 151, 0.1);
 }
 
 .year-ranges button {
     background: transparent;
-    color: #64ffda;
-    border: 1px solid #64ffda;
+    color: #20c997;
+    border: 1px solid #20c997;
     padding: 8px 14px;
     border-radius: 4px;
     cursor: pointer;
@@ -179,7 +179,7 @@ h2 {
 }
 
 .year-ranges button:hover {
-    background: rgba(100, 255, 218, 0.1);
+    background: rgba(32, 201, 151, 0.1);
 }
 
 /* Estilos para o container do checkbox */
@@ -200,6 +200,7 @@ h2 {
     text-transform: none;
     letter-spacing: 0;
     flex-grow: 1; /* Faz o texto ocupar o espaço disponível */
+    white-space: nowrap; /* Impede a quebra de linha */
 }
 
 /* Estilos do Toggle Switch */
@@ -241,7 +242,7 @@ h2 {
 }
 
 input:checked + .slider {
-    background-color: #64ffda;
+    background-color: #20c997;
 }
 
 input:checked + .slider:before {
@@ -286,13 +287,13 @@ input:checked + .slider:before {
 }
 
 #search-button {
-    background: #64ffda !important;
+    background: #20c997 !important;
     color: #0a192f !important;
     box-shadow: none;
 }
 
 #search-button:hover {
-    background: rgba(100, 255, 218, 0.8) !important;
+    background: rgba(32, 201, 151, 0.8) !important;
     transform: translateY(-2px);
 }
 
@@ -584,6 +585,7 @@ input:checked + .slider:before {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    margin-top: 15px; /* Adiciona espaço acima */
 }
 
 .export-controls button {
@@ -622,10 +624,10 @@ input:checked + .slider:before {
 /* Larguras fixas das colunas */
 .col-date { width: 10%; }
 .col-title { width: 35%; }
-.col-journal { width: 22%; } /* Reduzido */
-.col-authors { width: 18%; } /* Reduzido */
-.col-link { width: 7%; text-align: center; } /* Aumentado */
-.col-access { width: 8%; text-align: center; } /* Aumentado */
+.col-journal { width: 20%; }
+.col-authors { width: 20%; }
+.col-link { width: 7%; text-align: center; }
+.col-access { width: 8%; text-align: center; }
 
 /* Layout estático do painel esquerdo */
 #journal-management {
@@ -783,18 +785,50 @@ th[data-column="OPEN ACESS"] {
 
 /* Colunas expandíveis inicialmente ocultas em telas pequenas */
 @media (max-width: 1400px) {
-    th[data-column="AUTORES"],
-    th[data-column="AFILIACOES"],
-    td.expandable {
-        display: none;
-    }
-    
-    /* Mostrar ao hover */
-    th[data-column="AUTORES"]:hover,
-    th[data-column="AFILIACOES"]:hover,
-    td.expandable:hover {
-        display: table-cell;
-    }
+    /* Esta seção está vazia intencionalmente após a remoção da regra que ocultava colunas. */
+}
+
+/* Estilos para o Modal de Tela Cheia */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 25, 47, 0.85);
+    display: none; /* Começa oculto */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: #112240;
+    padding: 30px;
+    border-radius: 8px;
+    width: 95%;
+    height: 95%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #ccd6f6;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+#modal-table-container {
+    flex-grow: 1;
+    overflow-y: auto; /* Scroll vertical dentro do modal */
 }
 
 /* Botão para mostrar/ocultar colunas expandíveis */
@@ -816,9 +850,17 @@ th[data-column="OPEN ACESS"] {
 /* Responsividade */
 @media (max-width: 1200px) {
     #dashboard {
-        /* Mantém o grid de 2 colunas, mas ajusta as larguras */
         grid-template-columns: 340px 1fr;
         gap: 20px;
+    }
+}
+
+@media (max-width: 992px) { /* Novo breakpoint para tablets */
+    #dashboard {
+        grid-template-columns: 1fr; /* Coluna única */
+    }
+    #journal-management {
+        max-width: none; /* Ocupa a largura total */
     }
 }
 
@@ -826,14 +868,31 @@ th[data-column="OPEN ACESS"] {
     body {
         padding: 10px;
     }
+
+    .header-content, .main-footer-credits {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
     
     h1 {
-        font-size: 2em;
+        font-size: 1.8em;
     }
     
     #journal-management,
     #search-results {
         padding: 15px;
+    }
+
+    .date-buttons-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .recent-periods, .year-ranges {
+        flex-direction: column;
+        margin-bottom: 0;
     }
     
     .button-group {
@@ -843,6 +902,7 @@ th[data-column="OPEN ACESS"] {
     .filter-controls,
     .export-controls {
         flex-direction: column;
+        align-items: stretch; /* Botões ocupam 100% */
     }
     
     .filter-controls input,
@@ -1013,11 +1073,12 @@ select:focus {
 }
 
 .choices__list--multiple .choices__item {
-    background-color: #64ffda;
-    border: 1px solid #64ffda;
+    background-color: #20c997;
+    border: 1px solid #20c997;
     color: #0a192f;
     border-radius: 4px;
     font-weight: 500;
+    white-space: normal; /* Permite quebra de linha dentro do item */
 }
 
 .choices__list--dropdown, .choices__list[aria-expanded] {
@@ -1027,7 +1088,7 @@ select:focus {
 
 .choices__list--dropdown .choices__item--selectable.is-highlighted,
 .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
-    background-color: rgba(100, 255, 218, 0.1);
+    background-color: rgba(32, 201, 151, 0.1);
 }
 
 .choices__input {
@@ -1069,14 +1130,14 @@ select:focus {
 }
 
 .pagination-button:hover {
-    background-color: #64ffda;
+    background-color: #20c997;
     color: #0a192f;
-    border-color: #64ffda;
+    border-color: #20c997;
 }
 
 .pagination-button.active {
-    background-color: #64ffda;
+    background-color: #20c997;
     color: #0a192f;
-    border-color: #64ffda;
+    border-color: #20c997;
     cursor: default;
 }

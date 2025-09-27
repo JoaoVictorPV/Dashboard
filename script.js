@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Botões de exportação
     const exportHtmlButton = document.getElementById('export-html-button');
+    const fullscreenButton = document.getElementById('fullscreen-button');
+    
+    // Elementos do Modal
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalCloseButton = document.getElementById('modal-close-button');
+    const modalTableContainer = document.getElementById('modal-table-container');
     
     // Botões de data
     const last6MonthsButton = document.getElementById('last-6-months');
@@ -203,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             removeItemButton: true,
             searchPlaceholderValue: "Digite para procurar...",
             noResultsText: 'Nenhum resultado encontrado',
-            itemSelectText: 'Pressione para selecionar',
+            itemSelectText: '', // Remove o texto "pressione para selecionar"
         });
     }
 
@@ -250,7 +256,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const year = date.getFullYear().toString().slice(-2);
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const day = date.getDate().toString().padStart(2, '0');
-            return `${day}/${month}/${year}`;
+            return `${year}/${month}/${day}`;
         } catch (e) {
             return dateString;
         }
@@ -750,4 +756,58 @@ document.addEventListener('DOMContentLoaded', () => {
             paginationContainer.appendChild(btn);
         }
     }
+
+    // Funções do Modal de Tela Cheia
+    function renderModalTable(results) {
+        let tableHTML = `
+            <table id="modal-results-table">
+                <thead>
+                    <tr>
+                        <th class="col-date">Data</th>
+                        <th class="col-title">Título</th>
+                        <th class="col-journal">Revista</th>
+                        <th class="col-authors">Autores</th>
+                        <th class="col-link">Link</th>
+                        <th class="col-access">Open Access</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        results.forEach(article => {
+            const isOpenAccess = article['OPEN ACESS'] === 'Sim';
+            const openAccessIcon = isOpenAccess 
+                ? `<svg class="icon-v" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>`
+                : `<svg class="icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>`;
+
+            tableHTML += `
+                <tr>
+                    <td class="col-date">${formatDate(article['DATA DE PUBLICACAO'])}</td>
+                    <td class="col-title">${article['TITULO DA PUBLICACAO']}</td>
+                    <td class="col-journal">${article['REVISTA']}</td>
+                    <td class="col-authors">${article['AUTORES']}</td>
+                    <td class="col-link">${article['LINK CANONICO'] ? `<a href="${article['LINK CANONICO']}" target="_blank">🔗</a>` : '-'}</td>
+                    <td class="col-access ${isOpenAccess ? 'open-access-yes' : 'open-access-no'}">${openAccessIcon}</td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `</tbody></table>`;
+        modalTableContainer.innerHTML = tableHTML;
+    }
+
+    fullscreenButton.addEventListener('click', () => {
+        renderModalTable(filteredResults); // Renderiza a tabela com todos os resultados filtrados
+        modalOverlay.style.display = 'flex';
+    });
+
+    modalCloseButton.addEventListener('click', () => {
+        modalOverlay.style.display = 'none';
+    });
+
+    modalOverlay.addEventListener('click', (event) => {
+        if (event.target === modalOverlay) {
+            modalOverlay.style.display = 'none';
+        }
+    });
 });

@@ -100,6 +100,7 @@
                 
                 <div class="export-controls">
                     <button id="export-html-button">Exportar HTML</button>
+                    <button id="fullscreen-button">Tela Cheia</button>
                 </div>
             </div>
             
@@ -129,6 +130,17 @@
             <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fjoaovictorpv.github.io%2FDashboard%2Fexperimento%2F&label=Visitantes&countColor=%2364FFDA&style=flat" alt="Visitor Counter"/>
         </div>
     </footer>
+
+    <!-- Modal de Tela Cheia -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-content">
+            <button id="modal-close-button" class="modal-close-button">&times;</button>
+            <div id="modal-table-container">
+                <!-- A tabela será renderizada aqui via JS -->
+            </div>
+        </div>
+    </div>
+
 <script src="./lib/choices/choices.min.js"></script>
 <script src="./script.js?v=2"></script>
 </body>
