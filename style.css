@@ -185,11 +185,11 @@ h2 {
 /* Estilos para o container do checkbox */
 .checkbox-container {
     display: flex;
-    justify-content: space-between; /* Alinha texto à esquerda e switch à direita */
-    align-items: center;
+    flex-direction: column; /* Itens empilhados verticalmente */
+    align-items: center;   /* Centraliza horizontalmente */
     margin-top: 20px;
     margin-bottom: 25px;
-    padding-left: 5px;
+    gap: 10px; /* Espaço entre o texto e o switch */
 }
 
 .checkbox-label {
@@ -199,7 +199,6 @@ h2 {
     cursor: pointer;
     text-transform: none;
     letter-spacing: 0;
-    flex-grow: 1; /* Faz o texto ocupar o espaço disponível */
     white-space: nowrap; /* Impede a quebra de linha */
 }
 
@@ -207,8 +206,8 @@ h2 {
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 60px; /* Largura do switch aumentada */
-    height: 34px; /* Altura do switch aumentada */
+    width: 50px; /* Largura padrão */
+    height: 28px; /* Altura padrão */
 }
 
 .toggle-switch input {
@@ -232,8 +231,8 @@ h2 {
 .slider:before {
     position: absolute;
     content: "";
-    height: 26px; /* Tamanho do círculo aumentado */
-    width: 26px;
+    height: 20px; /* Tamanho do círculo padrão */
+    width: 20px;
     left: 4px;
     bottom: 4px;
     background-color: white;
@@ -246,7 +245,7 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-    transform: translateX(26px); /* Distância que o círculo se move aumentada*/
+    transform: translateX(22px); /* Distância padrão */
 }
 
 /* Grupo de botões principais */

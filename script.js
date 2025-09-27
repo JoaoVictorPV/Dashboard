@@ -250,8 +250,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função para formatar data
     function formatDate(dateString) {
         if (!dateString || dateString === 'N/A') return 'N/A';
-        
-        // Tenta converter formatos comuns como "2024 Jul 15" ou "2024 Jul"
+
+        // Tenta criar um objeto Date. Funciona para "2024 Jul 15", "2024-07-15", etc.
         const date = new Date(dateString);
         if (!isNaN(date.getTime())) {
             const year = date.getFullYear().toString().slice(-2);
@@ -260,26 +260,39 @@ document.addEventListener('DOMContentLoaded', () => {
             return `${day}/${month}/${year}`;
         }
 
-        // Fallback para formatos não padronizados ou traduzidos como "Julho de 2024"
+        // Fallback para formatos como "Julho de 2025", "2025 Jul", ou apenas "2025"
         const monthMap = {
-            'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04', 'mai': '05', 'jun': '06',
-            'jul': '07', 'ago': '08', 'set': '09', 'out': '10', 'nov': '11', 'dez': '12'
+            'jan': '01', 'janeiro': '01', 'fev': '02', 'fevereiro': '02', 'mar': '03', 'março': '03',
+            'abr': '04', 'abril': '04', 'mai': '05', 'maio': '05', 'jun': '06', 'junho': '06',
+            'jul': '07', 'julho': '07', 'ago': '08', 'agosto': '08', 'set': '09', 'setembro': '09',
+            'out': '10', 'outubro': '10', 'nov': '11', 'novembro': '11', 'dez': '12', 'dezembro': '12'
         };
         
         const cleanedString = dateString.toLowerCase().replace(' de ', ' ');
-        const parts = cleanedString.split(' ');
+        const parts = cleanedString.split(/[\s,]+/); // Divide por espaço ou vírgula
         
-        const yearPart = parts.find(p => p.match(/^\d{4}$/));
-        const monthPart = parts.find(p => Object.keys(monthMap).some(m => p.startsWith(m)));
+        let year = '', month = '', day = '';
 
-        if (yearPart && monthPart) {
-            const year = yearPart.slice(-2);
-            const monthKey = Object.keys(monthMap).find(m => monthPart.startsWith(m));
-            const month = monthMap[monthKey];
-            return `01/${month}/${year}`; // Retorna dia 01 como padrão
+        parts.forEach(part => {
+            if (/^\d{4}$/.test(part)) {
+                year = part.slice(-2);
+            } else if (/^\d{1,2}$/.test(part)) {
+                day = part.padStart(2, '0');
+            } else {
+                for (const monthName in monthMap) {
+                    if (part.startsWith(monthName)) {
+                        month = monthMap[monthName];
+                        break;
+                    }
+                }
+            }
+        });
+
+        if (year && month) {
+            return `${day || '01'}/${month}/${year}`;
         }
 
-        return dateString; // Retorna o original se nada for encontrado
+        return dateString; // Retorna o original se a análise falhar
     }
 
     // Função para renderizar a tabela
@@ -653,10 +666,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Event listeners para ordenação
     document.querySelectorAll('.sortable').forEach(header => {
-        header.addEventListener('click', () => {
+        const handleSort = () => {
             const column = header.getAttribute('data-column');
             sortTable(column);
-        });
+        };
+        header.addEventListener('click', handleSort);
+        header.addEventListener('touchend', handleSort); // Adiciona evento de toque
     });
     
     // Event listeners para exportação
