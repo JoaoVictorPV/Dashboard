@@ -909,17 +909,6 @@ th[data-column="OPEN ACESS"] {
     #search-results {
         padding: 15px;
     }
-
-    .date-buttons-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-
-    .recent-periods, .year-ranges {
-        flex-direction: column;
-        margin-bottom: 0;
-    }
     
     .button-group {
         flex-direction: column;
