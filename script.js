@@ -273,8 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ícone de Open Access
             const isOpenAccess = article['OPEN ACESS'] === 'Sim';
             const openAccessIcon = isOpenAccess 
-                ? `<svg class="icon-v" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>`
-                : `<svg class="icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>`;
+                ? `<svg class="icon-v" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>`
+                : `<svg class="icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>`;
             
             row.innerHTML = `
                 <td class="col-date">${formatDate(article['DATA DE PUBLICACAO'])}</td>
@@ -486,6 +486,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Funções de exportação
     function exportToHTML() {
         const searchSummaryContent = searchSummaryDiv.innerHTML;
+
+        // Definição dos ícones SVG para o HTML exportado
+        const iconLink = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" style="vertical-align: middle; fill: #667eea;"><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>`;
+        const iconAccessYes = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" style="vertical-align: middle; fill: #27ae60;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>`;
+        const iconAccessNo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" style="vertical-align: middle; fill: #c0392b;"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
+
         const html = `
             <!DOCTYPE html>
             <html lang="pt-BR">
@@ -493,79 +499,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 <meta charset="UTF-8">
                 <title>Resultados da Busca Científica</title>
                 <style>
-                    body {
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        margin: 0;
-                        padding: 20px;
-                        background-color: #f4f7f6;
-                        color: #333;
-                    }
-                    .container {
-                        max-width: 1200px;
-                        margin: 0 auto;
-                        background: #ffffff;
-                        padding: 25px;
-                        border-radius: 15px;
-                        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-                    }
-                    h1 {
-                        color: #2a5298;
-                        font-size: 28px;
-                        border-bottom: 3px solid #667eea;
-                        padding-bottom: 10px;
-                        margin-bottom: 20px;
-                    }
-                    .search-summary {
-                        background-color: #e9ecef;
-                        padding: 15px;
-                        border-radius: 8px;
-                        margin-bottom: 20px;
-                        font-size: 14px;
-                        color: #495057;
-                        border: 1px solid #dee2e6;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        font-size: 16px;
-                    }
-                    th, td {
-                        padding: 15px;
-                        text-align: left;
-                        border-bottom: 1px solid #ddd;
-                    }
-                    th {
-                        background-color: #667eea;
-                        color: white;
-                        font-size: 18px;
-                    }
-                    tr:nth-child(even) {
-                        background-color: #e9ecef;
-                    }
-                    tr:hover {
-                        background-color: #d4d8f0;
-                    }
-                    a {
-                        color: #667eea;
-                        text-decoration: none;
-                        font-weight: bold;
-                    }
-                    a:hover {
-                        text-decoration: underline;
-                    }
-                    .open-access-yes {
-                        color: #27ae60;
-                        font-weight: bold;
-                    }
-                    .open-access-no {
-                        color: #c0392b;
-                    }
-                    .footer {
-                        text-align: center;
-                        margin-top: 25px;
-                        font-size: 12px;
-                        color: #777;
-                    }
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
+                    .container { max-width: 1200px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+                    h1 { color: #2a5298; font-size: 28px; border-bottom: 3px solid #667eea; padding-bottom: 10px; margin-bottom: 20px; }
+                    .search-summary { background-color: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; color: #495057; border: 1px solid #dee2e6; }
+                    table { width: 100%; border-collapse: collapse; font-size: 16px; }
+                    th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
+                    th { background-color: #667eea; color: white; font-size: 18px; }
+                    td { vertical-align: middle; }
+                    tr:nth-child(even) { background-color: #e9ecef; }
+                    tr:hover { background-color: #d4d8f0; }
+                    a { color: #667eea; text-decoration: none; font-weight: bold; }
+                    a:hover { text-decoration: underline; }
+                    .footer { text-align: center; margin-top: 25px; font-size: 12px; color: #777; }
                 </style>
             </head>
             <body>
@@ -582,8 +528,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <th>Título</th>
                                 <th>Revista</th>
                                 <th>Autores</th>
-                                <th>Link</th>
-                                <th>Open Access</th>
+                                <th style="text-align: center;">Link</th>
+                                <th style="text-align: center;">Open Access</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -593,8 +539,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <td>${article['TITULO DA PUBLICACAO']}</td>
                                     <td>${article['REVISTA']}</td>
                                     <td>${article['AUTORES']}</td>
-                                    <td><a href="${article['LINK CANONICO']}" target="_blank">Acessar</a></td>
-                                    <td class="${article['OPEN ACESS'] === 'Sim' ? 'open-access-yes' : 'open-access-no'}">${article['OPEN ACESS']}</td>
+                                    <td style="text-align: center;">${article['LINK CANONICO'] ? `<a href="${article['LINK CANONICO']}" target="_blank">${iconLink}</a>` : '-'}</td>
+                                    <td style="text-align: center;">${article['OPEN ACESS'] === 'Sim' ? iconAccessYes : iconAccessNo}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
