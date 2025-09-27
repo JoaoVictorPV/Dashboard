@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Truncar autores
             const fullAuthors = article['AUTORES'] || '';
-            const truncatedAuthors = fullAuthors.length > 20 ? fullAuthors.substring(0, 20) + '...' : fullAuthors;
+            const truncatedAuthors = fullAuthors.length > 10 ? fullAuthors.substring(0, 10) + '...' : fullAuthors;
 
             // Ícone de Open Access
             const isOpenAccess = article['OPEN ACESS'] === 'Sim';

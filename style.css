@@ -582,11 +582,11 @@ h2 {
 
 /* Larguras fixas das colunas */
 .col-date { width: 10%; }
-.col-title { width: 35%; } /* Reduzido para dar mais espaço */
-.col-journal { width: 25%; }
-.col-authors { width: 20%; } /* Aumentado para acomodar melhor */
-.col-link { width: 5%; text-align: center; }
-.col-access { width: 5%; text-align: center; }
+.col-title { width: 35%; }
+.col-journal { width: 22%; } /* Reduzido */
+.col-authors { width: 18%; } /* Reduzido */
+.col-link { width: 7%; text-align: center; } /* Aumentado */
+.col-access { width: 8%; text-align: center; } /* Aumentado */
 
 /* Layout estático do painel esquerdo */
 #journal-management {
