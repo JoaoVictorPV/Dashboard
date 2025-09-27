@@ -688,7 +688,7 @@ input:checked + .slider:before {
 }
 
 .icon-v {
-    color: #27ae60; /* Verde */
+    color: #27ae60 !important; /* Verde */
 }
 
 .icon-x {
