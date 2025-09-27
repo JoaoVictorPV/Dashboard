@@ -207,8 +207,8 @@ h2 {
 .toggle-switch {
     position: relative;
     display: inline-block;
-    width: 50px; /* Largura do switch */
-    height: 28px; /* Altura do switch */
+    width: 60px; /* Largura do switch aumentada */
+    height: 34px; /* Altura do switch aumentada */
 }
 
 .toggle-switch input {
@@ -232,8 +232,8 @@ h2 {
 .slider:before {
     position: absolute;
     content: "";
-    height: 20px; /* Tamanho do círculo */
-    width: 20px;
+    height: 26px; /* Tamanho do círculo aumentado */
+    width: 26px;
     left: 4px;
     bottom: 4px;
     background-color: white;
@@ -246,7 +246,7 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before {
-    transform: translateX(22px); /* Distância que o círculo se move */
+    transform: translateX(26px); /* Distância que o círculo se move aumentada*/
 }
 
 /* Grupo de botões principais */
@@ -837,6 +837,25 @@ th[data-column="OPEN ACESS"] {
 #modal-table-container {
     flex-grow: 1;
     overflow-y: auto; /* Scroll vertical dentro do modal */
+}
+
+#modal-results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px; /* Fonte maior */
+}
+
+#modal-results-table th, #modal-results-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #233554;
+}
+
+#modal-results-table th {
+    background-color: #0a192f;
+}
+
+#modal-results-table tr:nth-child(even) {
+    background-color: #0a192f; /* Tom de azul mais escuro para alternar */
 }
 
 /* Botão para mostrar/ocultar colunas expandíveis */

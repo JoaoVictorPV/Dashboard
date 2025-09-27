@@ -250,16 +250,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função para formatar data
     function formatDate(dateString) {
         if (!dateString || dateString === 'N/A') return 'N/A';
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
+        
+        // Tenta converter formatos comuns como "2024 Jul 15" ou "2024 Jul"
+        const date = new Date(dateString);
+        if (!isNaN(date.getTime())) {
             const year = date.getFullYear().toString().slice(-2);
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const day = date.getDate().toString().padStart(2, '0');
             return `${day}/${month}/${year}`;
-        } catch (e) {
-            return dateString;
         }
+
+        // Fallback para formatos não padronizados ou traduzidos como "Julho de 2024"
+        const monthMap = {
+            'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04', 'mai': '05', 'jun': '06',
+            'jul': '07', 'ago': '08', 'set': '09', 'out': '10', 'nov': '11', 'dez': '12'
+        };
+        
+        const cleanedString = dateString.toLowerCase().replace(' de ', ' ');
+        const parts = cleanedString.split(' ');
+        
+        const yearPart = parts.find(p => p.match(/^\d{4}$/));
+        const monthPart = parts.find(p => Object.keys(monthMap).some(m => p.startsWith(m)));
+
+        if (yearPart && monthPart) {
+            const year = yearPart.slice(-2);
+            const monthKey = Object.keys(monthMap).find(m => monthPart.startsWith(m));
+            const month = monthMap[monthKey];
+            return `01/${month}/${year}`; // Retorna dia 01 como padrão
+        }
+
+        return dateString; // Retorna o original se nada for encontrado
     }
 
     // Função para renderizar a tabela
@@ -779,13 +799,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const openAccessIcon = isOpenAccess 
                 ? `<svg class="icon-v" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>`
                 : `<svg class="icon-x" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>`;
+            
+            const fullAuthors = article['AUTORES'] || '';
+            const truncatedAuthorsModal = fullAuthors.length > 20 ? fullAuthors.substring(0, 20) + '...' : fullAuthors;
 
             tableHTML += `
                 <tr>
                     <td class="col-date">${formatDate(article['DATA DE PUBLICACAO'])}</td>
                     <td class="col-title">${article['TITULO DA PUBLICACAO']}</td>
                     <td class="col-journal">${article['REVISTA']}</td>
-                    <td class="col-authors">${article['AUTORES']}</td>
+                    <td class="col-authors" title="${fullAuthors}">${truncatedAuthorsModal}</td>
                     <td class="col-link">${article['LINK CANONICO'] ? `<a href="${article['LINK CANONICO']}" target="_blank">🔗</a>` : '-'}</td>
                     <td class="col-access ${isOpenAccess ? 'open-access-yes' : 'open-access-no'}">${openAccessIcon}</td>
                 </tr>
