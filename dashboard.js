@@ -1,4 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
     // Elementos do DOM
     const journalSelector = document.getElementById('journal-selector');
     const startDateInput = document.getElementById('start-date');
@@ -28,8 +27,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalOverlay = document.getElementById('modal-overlay');
     const modalCloseButton = document.getElementById('modal-close-button');
     const modalTableContainer = document.getElementById('modal-table-container');
+
+    // Elementos dos Filtros Personalizados
+    const addFilterBtn = document.getElementById('add-filter-btn');
+    const filterModal = document.getElementById('filter-modal');
+    const closeFilterModalBtn = document.getElementById('close-filter-modal');
+    const saveFilterBtn = document.getElementById('save-filter-button');
+    const savedFiltersContainer = document.getElementById('saved-filters-container');
+    const filterNameInput = document.getElementById('filter-name');
+    const filterJournalSelector = document.getElementById('filter-journal-selector');
+    const filterStartDateInput = document.getElementById('filter-start-date');
+    const filterEndDateInput = document.getElementById('filter-end-date');
+    const modalDateButtons = filterModal.querySelectorAll('.recent-periods button');
     
     // Botões de data
+    const last1MonthButton = document.getElementById('last-1-month');
+    const last3MonthsButton = document.getElementById('last-3-months');
     const last6MonthsButton = document.getElementById('last-6-months');
     const last1YearButton = document.getElementById('last-1-year');
     const last18MonthsButton = document.getElementById('last-18-months');
@@ -41,15 +54,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const range2016_2018Button = document.getElementById('range-2016-2018');
     const range2013_2015Button = document.getElementById('range-2013-2015');
     const range2010_2012Button = document.getElementById('range-2010-2012');
+    const range2005_2009Button = document.getElementById('range-2005-2009');
+    const range2000_2004Button = document.getElementById('range-2000-2004');
+    const range1990_1999Button = document.getElementById('range-1990-1999');
+    const range1980_1989Button = document.getElementById('range-1980-1989');
 
     // Variáveis globais
     let choicesInstance = null;
+    let filterChoicesInstance = null;
     let currentResults = [];
     let filteredResults = [];
     let sortColumn = '';
     let sortDirection = 'asc';
     let currentPage = 1;
     const rowsPerPage = 15;
+    let activeFilter = null;
+
+    // Detecção de idioma e traduções
+    const lang = window.location.pathname.includes('dashboard_en.html') ? 'en' : 'pt';
+    const translations = {
+        pt: {
+            date: "Data:",
+            journals: "Revistas:",
+            author: "Autor:",
+            keywords: "Palavras:",
+            openAccess: "Apenas Open Access",
+            allJournals: "Todas as revistas",
+            allPubmed: "Todo o Pubmed",
+            to: "a",
+            journalsLabel: "Revistas:",
+            periodLabel: "Período:",
+            customRangeLabel: "Intervalo Personalizado:",
+            lastMonth: "Último Mês",
+            last3Months: "Últimos 3 Meses",
+            last6Months: "Últimos 6 Meses",
+            lastYear: "Último Ano"
+        },
+        en: {
+            date: "Date:",
+            journals: "Journals:",
+            author: "Author:",
+            keywords: "Keywords:",
+            openAccess: "Open Access Only",
+            allJournals: "All journals",
+            allPubmed: "All of Pubmed",
+            to: "to",
+            journalsLabel: "Journals:",
+            periodLabel: "Period:",
+            customRangeLabel: "Custom Range:",
+            lastMonth: "Last Month",
+            last3Months: "Last 3 Months",
+            last6Months: "Last 6 Months",
+            lastYear: "Last Year"
+        }
+    };
+    const T = translations[lang];
+
+    // Adicionar traduções para mensagens de erro
+    const errorMessages = {
+        pt: {
+            noFilterName: 'Por favor, dê um nome ao filtro.',
+            noJournalSelected: 'Por favor, selecione pelo menos uma revista.',
+            noDateSelected: 'Por favor, selecione um período ou um intervalo de datas.',
+            noSearchCriteria: 'Por favor, preencha pelo menos um campo de busca.',
+            noResults: 'Nenhum resultado encontrado para os critérios fornecidos.',
+            fetchError: 'Ocorreu um erro ao buscar os dados no PubMed. Verifique sua conexão ou tente novamente mais tarde.'
+        },
+        en: {
+            noFilterName: 'Please enter a name for the filter.',
+            noJournalSelected: 'Please select at least one journal.',
+            noDateSelected: 'Please select a period or a date range.',
+            noSearchCriteria: 'Please fill in at least one search field.',
+            noResults: 'No results found for the given criteria.',
+            fetchError: 'An error occurred while fetching data from PubMed. Check your connection or try again later.'
+        }
+    };
+    const MSG = errorMessages[lang];
 
     const journals = [
         { "issn": "2366-004X", "abbr": "Abdom Radiol (NY)", "name": "Abdominal Radiology" },
@@ -134,6 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { "issn": "1352-8180", "abbr": "Med Image Anal", "name": "Medical Image Analysis" },
         { "issn": "1078-8956", "abbr": "Nat Med", "name": "Nature Medicine" },
         { "issn": "1759-4774", "abbr": "Nat Rev Clin Oncol", "name": "Nature Reviews Clinical Oncology" },
+        { "issn": "1526-632X", "abbr": "Neurology", "name": "Neurology" },
         { "issn": "0028-3940", "abbr": "Neuroradiology", "name": "Neuroradiology" },
         { "issn": "0148-396X", "abbr": "Neurosurgery", "name": "Neurosurgery" },
         { "issn": "1102-6030", "abbr": "Niger J Clin Pract", "name": "Nigerian Journal of Clinical Practice" },
@@ -210,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             searchPlaceholderValue: "Digite para procurar...",
             noResultsText: 'Nenhum resultado encontrado',
             itemSelectText: '', // Remove o texto "pressione para selecionar"
+            addItems: false
         });
     }
 
@@ -251,17 +333,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function formatDate(dateString) {
         if (!dateString || dateString === 'N/A') return 'N/A';
 
-        // Tenta criar um objeto Date. Funciona para "2024 Jul 15", "2024-07-15", etc.
-        const date = new Date(dateString);
-        if (!isNaN(date.getTime()) && dateString.match(/\d/g) && dateString.match(/\d/g).length >= 2) {
+        // Adiciona T00:00:00 para garantir que a data seja interpretada no fuso horário local e evitar erros de um dia
+        const date = new Date(dateString.includes('T') ? dateString : dateString + 'T00:00:00');
+        
+        // Verifica se a data é válida
+        if (!isNaN(date.getTime())) {
             const year = date.getFullYear().toString().slice(-2);
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            // Verifica se o dia foi especificado, senão usa 25
-            const day = dateString.match(/\b\d{1,2}\b/) ? date.getDate().toString().padStart(2, '0') : '25';
+            const day = date.getDate().toString().padStart(2, '0');
             return `${day}/${month}/${year}`;
         }
 
-        // Fallback para formatos como "Julho de 2025", "2025 Jul", ou apenas "2025"
+        // 2. Lógica de fallback para outros formatos (ex: "YYYY Mon DD")
         const monthMap = {
             'jan': '01', 'janeiro': '01', 'feb': '02', 'fevereiro': '02', 'mar': '03', 'março': '03',
             'apr': '04', 'abril': '04', 'may': '05', 'maio': '05', 'jun': '06', 'junho': '06',
@@ -269,30 +352,47 @@ document.addEventListener('DOMContentLoaded', () => {
             'oct': '10', 'out': '10', 'outubro': '10', 'nov': '11', 'novembro': '11', 'dec': '12', 'dezembro': '12'
         };
         
-        const cleanedString = dateString.toLowerCase().replace(' de ', ' ');
-        const parts = cleanedString.split(/[\s,]+/);
-        
-        let year = '', month = '', day = '';
+        const cleanedString = dateString.toLowerCase().replace(/ de /g, ' ').replace(/[^a-z0-9\s-]/g, '');
+        const parts = cleanedString.split(/[\s-]+/); // Divide por espaço ou hífen
 
-        parts.forEach(part => {
-            if (/^\d{4}$/.test(part)) {
-                year = part.slice(-2);
-            } else if (/^\d{1,2}$/.test(part)) {
-                day = part.padStart(2, '0');
-            } else {
-                for (const monthName in monthMap) {
-                    if (part.startsWith(monthName)) {
-                        month = monthMap[monthName];
-                        break;
-                    }
-                }
-            }
-        });
+        let year = '';
+        let month = '';
+        let day = '';
 
-        if (year && month) {
-            return `${day || '25'}/${month}/${year}`; // Usa dia 25 como padrão
+        // Extrai o ano (4 dígitos)
+        const yearMatch = cleanedString.match(/\b\d{4}\b/);
+        if (yearMatch) {
+            year = yearMatch[0].slice(-2);
         }
 
+        // Extrai o mês
+        for (const part of parts) {
+            for (const monthName in monthMap) {
+                if (part.startsWith(monthName)) {
+                    month = monthMap[monthName];
+                    break;
+                }
+            }
+            if (month) break;
+        }
+
+        // Extrai o dia (se houver)
+        const dayMatch = cleanedString.match(/\b\d{1,2}\b/);
+        if (dayMatch && dayMatch[0].length < 4) { // Garante que não é o ano
+             day = dayMatch[0].padStart(2, '0');
+        }
+
+        // Se encontrou ano e mês, retorna a data (com dia padrão 15 se não encontrado)
+        if (year && month) {
+            return `${day || '15'}/${month}/${year}`;
+        }
+
+        // Se encontrou apenas o ano, retorna o primeiro dia do ano
+        if (year) {
+            return `01/01/${year}`;
+        }
+
+        // Se nada funcionar, retorna a string original
         return dateString;
     }
 
@@ -375,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // }
 
         if (term.length === 0) {
-            showMessage('Por favor, preencha pelo menos um campo de busca.', 'warning');
+            showMessage(MSG.noSearchCriteria, 'warning');
             return;
         }
 
@@ -393,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!idList || idList.length === 0) {
                 hideLoading();
-                showMessage('Nenhum resultado encontrado para os critérios fornecidos.', 'info');
+                showMessage(MSG.noResults, 'info');
                 showResults([]);
                 return;
             }
@@ -451,7 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             hideLoading();
             console.error('Erro na busca do PubMed:', error);
-            showMessage('Ocorreu um erro ao buscar os dados no PubMed. Verifique sua conexão ou tente novamente mais tarde.', 'error');
+            showMessage(MSG.fetchError, 'error');
         }
     }
 
@@ -525,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funções de exportação
     function exportToHTML() {
-        const searchSummaryContent = searchSummaryDiv.innerHTML;
+        const searchSummaryContent = getSearchSummaryHTML();
 
         // Definição dos ícones SVG para o HTML exportado
         const iconLink = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" style="vertical-align: middle; fill: #667eea;"><path d="M17 7h-4v2h4c1.65 0 3 1.35 3 3s-1.35 3-3 3h-4v2h4c2.76 0 5-2.24 5-5s-2.24-5-5-5zm-6 8H7c-1.65 0-3-1.35-3-3s1.35-3 3-3h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-2zm-3-4h8v2H8v-2z"/></svg>`;
@@ -600,6 +700,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Event listeners para botões de data
+    last1MonthButton.addEventListener('click', () => {
+        const today = new Date();
+        const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+        startDateInput.valueAsDate = oneMonthAgo;
+        endDateInput.valueAsDate = today;
+    });
+
+    last3MonthsButton.addEventListener('click', () => {
+        const today = new Date();
+        const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+        startDateInput.valueAsDate = threeMonthsAgo;
+        endDateInput.valueAsDate = today;
+    });
+
     last6MonthsButton.addEventListener('click', () => {
         const today = new Date();
         const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, today.getDate());
@@ -653,8 +767,31 @@ document.addEventListener('DOMContentLoaded', () => {
         endDateInput.value = '2012-12-31';
     });
 
+    range2005_2009Button.addEventListener('click', () => {
+        startDateInput.value = '2005-01-01';
+        endDateInput.value = '2009-12-31';
+    });
+
+    range2000_2004Button.addEventListener('click', () => {
+        startDateInput.value = '2000-01-01';
+        endDateInput.value = '2004-12-31';
+    });
+
+    range1990_1999Button.addEventListener('click', () => {
+        startDateInput.value = '1990-01-01';
+        endDateInput.value = '1999-12-31';
+    });
+
+    range1980_1989Button.addEventListener('click', () => {
+        startDateInput.value = '1980-01-01';
+        endDateInput.value = '1989-12-31';
+    });
+
     // Event listeners principais
-    searchButton.addEventListener('click', searchPubMed);
+    searchButton.addEventListener('click', () => {
+        activeFilter = null; // Garante que não há filtro ativo para buscas manuais
+        searchPubMed();
+    });
     
     // Event listeners para filtros
     searchFilter.addEventListener('input', applyFilters);
@@ -697,9 +834,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Função para limpar os parâmetros de busca
     function clearSearchParameters() {
+        activeFilter = null; // Reseta o filtro ativo
         if (choicesInstance) {
-            choicesInstance.removeActiveItems();
-            choicesInstance.clearInput();
+            // Destrói e recria a instância para garantir que o seletor volte ao estado original limpo
+            choicesInstance.destroy();
+            journalSelector.innerHTML = '';
+            populateJournalSelector(journals);
         }
         startDateInput.value = '';
         endDateInput.value = '';
@@ -717,47 +857,59 @@ document.addEventListener('DOMContentLoaded', () => {
         totalCount.textContent = '0';
     }
 
-    // Função para exibir o resumo dos parâmetros de busca
-    function displaySearchSummary() {
+    function getSearchSummaryHTML() {
         let summaryParts = [];
 
-        const startDate = startDateInput.value;
-        const endDate = endDateInput.value;
-        if (startDate && endDate) {
-            summaryParts.push(`<strong>Data:</strong> ${formatDate(startDate)} a ${formatDate(endDate)}`);
+        // Lógica de exibição de data/período
+        if (activeFilter && activeFilter.period) {
+            const periodMap = { '1m': T.lastMonth, '3m': T.last3Months, '6m': T.last6Months, '12m': T.lastYear };
+            const periodText = periodMap[activeFilter.period] || activeFilter.period;
+            summaryParts.push(`<strong>${T.periodLabel}</strong> ${periodText}`);
+        } else {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            if (startDate && endDate) {
+                summaryParts.push(`<strong>${T.date}</strong> ${formatDate(startDate)} ${T.to} ${formatDate(endDate)}`);
+            }
         }
 
         const selectedOptions = choicesInstance.getValue(true);
         if (selectedOptions.length > 0) {
             if (selectedOptions.includes('all_journals')) {
-                summaryParts.push(`<strong>Revistas:</strong> Todas as revistas`);
+                summaryParts.push(`<strong>${T.journals}</strong> ${T.allJournals}`);
             } else if (selectedOptions.includes('all_pubmed')) {
-                summaryParts.push(`<strong>Revistas:</strong> Todo o Pubmed`);
+                summaryParts.push(`<strong>${T.journals}</strong> ${T.allPubmed}`);
             } else {
                 const journalNames = selectedOptions.map(value => {
                     const journal = journals.find(j => j.issn === value);
                     return journal ? journal.abbr : '';
                 }).filter(Boolean).join(', ');
-                summaryParts.push(`<strong>Revistas:</strong> ${journalNames}`);
+                summaryParts.push(`<strong>${T.journals}</strong> ${journalNames}`);
             }
         }
 
         const author = authorInput.value.trim();
         if (author) {
-            summaryParts.push(`<strong>Autor:</strong> ${author}`);
+            summaryParts.push(`<strong>${T.author}</strong> ${author}`);
         }
 
         const keywords = keywordsInput.value.trim();
         if (keywords) {
-            summaryParts.push(`<strong>Palavras:</strong> ${keywords}`);
+            summaryParts.push(`<strong>${T.keywords}</strong> ${keywords}`);
         }
 
         if (openAccessOnlyCheckbox.checked) {
-            summaryParts.push(`<strong>Apenas Open Access</strong>`);
+            summaryParts.push(`<strong>${T.openAccess}</strong>`);
         }
 
-        if (summaryParts.length > 0) {
-            searchSummaryDiv.innerHTML = summaryParts.join('. ');
+        return summaryParts.join('. ');
+    }
+
+    // Função para exibir o resumo dos parâmetros de busca
+    function displaySearchSummary() {
+        const summaryHTML = getSearchSummaryHTML();
+        if (summaryHTML) {
+            searchSummaryDiv.innerHTML = summaryHTML;
             searchSummaryDiv.style.display = 'block';
         } else {
             searchSummaryDiv.style.display = 'none';
@@ -779,6 +931,233 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carregar as revistas ao iniciar
     journals.sort((a, b) => a.name.localeCompare(b.name));
     populateJournalSelector(journals);
+
+    // --- LÓGICA DOS FILTROS PERSONALIZADOS ---
+
+    // Função para popular o seletor de revistas do modal
+    function populateFilterModalSelector() {
+        journals.forEach(journal => {
+            const option = document.createElement('option');
+            option.value = journal.issn;
+            option.textContent = journal.name;
+            filterJournalSelector.appendChild(option);
+        });
+
+        filterChoicesInstance = new Choices(filterJournalSelector, {
+            removeItemButton: true,
+            searchPlaceholderValue: "Digite para procurar...",
+            noResultsText: 'Nenhum resultado encontrado',
+            itemSelectText: '',
+            addItems: false
+        });
+    }
+
+    // Função para resetar o formulário do modal, recriando o seletor de revistas
+    function resetFilterModal() {
+        filterNameInput.value = '';
+        filterStartDateInput.value = '';
+        filterEndDateInput.value = '';
+        modalDateButtons.forEach(btn => btn.classList.remove('active'));
+
+        // Garante que o seletor de revistas seja reiniciado
+        if (filterChoicesInstance) {
+            filterChoicesInstance.destroy();
+            filterChoicesInstance = null;
+        }
+        filterJournalSelector.innerHTML = '';
+        populateFilterModalSelector();
+    }
+
+    // Abrir e fechar o modal de filtros
+    if (addFilterBtn) {
+        addFilterBtn.addEventListener('click', () => {
+            resetFilterModal(); // Reseta e recria o modal
+            filterModal.style.display = 'flex';
+        });
+    }
+
+    if (closeFilterModalBtn) {
+        closeFilterModalBtn.addEventListener('click', () => {
+            filterModal.style.display = 'none';
+        });
+    }
+
+    filterModal.addEventListener('click', (event) => {
+        if (event.target === filterModal) {
+            filterModal.style.display = 'none';
+        }
+    });
+
+    // Lógica dos botões de período dentro do modal
+    modalDateButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove a classe 'active' de todos os botões
+            modalDateButtons.forEach(btn => btn.classList.remove('active'));
+            // Adiciona a classe 'active' apenas ao botão clicado
+            button.classList.add('active');
+
+            // Apenas marca o botão como ativo e limpa as datas personalizadas para evitar confusão
+            filterStartDateInput.value = '';
+            filterEndDateInput.value = '';
+        });
+    });
+
+    // Limpa o período se a data personalizada for alterada
+    filterStartDateInput.addEventListener('change', () => {
+        modalDateButtons.forEach(btn => btn.classList.remove('active'));
+    });
+    filterEndDateInput.addEventListener('change', () => {
+        modalDateButtons.forEach(btn => btn.classList.remove('active'));
+    });
+
+    // Função para salvar o filtro
+    function saveFilter() {
+        const name = filterNameInput.value.trim();
+        const selectedJournals = filterChoicesInstance.getValue(true);
+        const startDateValue = filterStartDateInput.value;
+        const endDateValue = filterEndDateInput.value;
+        const activeButton = filterModal.querySelector('.recent-periods button.active');
+
+        // Validação
+        if (!name) {
+            alert(MSG.noFilterName);
+            return;
+        }
+        if (selectedJournals.length === 0) {
+            alert(MSG.noJournalSelected);
+            return;
+        }
+        if (!activeButton && (!startDateValue || !endDateValue)) {
+            alert(MSG.noDateSelected);
+            return;
+        }
+        
+        let period = null;
+        if (activeButton) {
+            period = activeButton.dataset.period;
+        }
+
+        const newFilter = {
+            id: Date.now(),
+            name: name,
+            journals: selectedJournals,
+            startDate: period ? null : startDateValue,
+            endDate: period ? null : endDateValue,
+            period: period
+        };
+
+        let savedFilters = JSON.parse(localStorage.getItem('customFilters')) || [];
+        savedFilters.push(newFilter);
+        localStorage.setItem('customFilters', JSON.stringify(savedFilters));
+
+        renderSavedFilters();
+        filterModal.style.display = 'none';
+        resetFilterModal(); // Limpa o formulário do modal
+    }
+
+    saveFilterBtn.addEventListener('click', saveFilter);
+
+    // Função para renderizar os filtros salvos
+    function renderSavedFilters() {
+        savedFiltersContainer.innerHTML = '';
+        let savedFilters = JSON.parse(localStorage.getItem('customFilters')) || [];
+
+        savedFilters.forEach(filter => {
+            const button = document.createElement('button');
+            button.className = 'saved-filter-button';
+            button.dataset.id = filter.id;
+
+            let summary = `<strong>${filter.name}</strong><br>`;
+            if (filter.journals && filter.journals.length > 0) {
+                const journalNames = filter.journals.map(issn => {
+                    const journal = journals.find(j => j.issn === issn);
+                    return journal ? journal.abbr : '';
+                }).join(', ');
+                summary += `<span class="filter-summary">${T.journalsLabel} ${journalNames}</span><br>`;
+            }
+            if (filter.period) {
+                const periodMap = { '1m': T.lastMonth, '3m': T.last3Months, '6m': T.last6Months, '12m': T.lastYear };
+                const periodText = periodMap[filter.period] || filter.period;
+                summary += `<span class="filter-summary">${T.periodLabel} ${periodText}</span>`;
+            } else if (filter.startDate && filter.endDate) {
+                summary += `<span class="filter-summary">${T.periodLabel} ${formatDate(filter.startDate)} - ${formatDate(filter.endDate)}</span>`;
+            }
+
+            button.innerHTML = `
+                <div>${summary}</div>
+                <button class="delete-filter-btn" data-id="${filter.id}" title="Excluir filtro">&times;</button>
+            `;
+
+            savedFiltersContainer.appendChild(button);
+        });
+
+        // Adicionar event listeners após a renderização
+        addFilterActionListeners();
+    }
+
+    // Função para adicionar listeners aos botões de filtro
+    function addFilterActionListeners() {
+        document.querySelectorAll('.saved-filter-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-filter-btn')) {
+                    return; // Não aplica o filtro se o botão de deletar foi clicado
+                }
+                applyFilter(button.dataset.id);
+            });
+        });
+
+        document.querySelectorAll('.delete-filter-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                deleteFilter(button.dataset.id);
+            });
+        });
+    }
+
+    // Função para aplicar um filtro salvo
+    function applyFilter(id) {
+        let savedFilters = JSON.parse(localStorage.getItem('customFilters')) || [];
+        const filter = savedFilters.find(f => f.id == id);
+
+        if (filter) {
+            activeFilter = filter; // Define o filtro atual como ativo
+            clearSearchParameters(); // Limpa os campos antes de aplicar
+
+            choicesInstance.setChoiceByValue(filter.journals);
+            
+            if (filter.period) {
+                const today = new Date();
+                let startDate = new Date();
+                if (filter.period === '1m') startDate.setMonth(today.getMonth() - 1);
+                if (filter.period === '3m') startDate.setMonth(today.getMonth() - 3);
+                if (filter.period === '6m') startDate.setMonth(today.getMonth() - 6);
+                if (filter.period === '12m') startDate.setFullYear(today.getFullYear() - 1);
+                
+                startDateInput.valueAsDate = startDate;
+                endDateInput.valueAsDate = today;
+
+            } else {
+                startDateInput.value = filter.startDate;
+                endDateInput.value = filter.endDate;
+            }
+
+            // Atraso para garantir que o Choices.js processe os valores antes da busca
+            setTimeout(() => {
+                searchPubMed();
+            }, 100);
+        }
+    }
+
+    // Função para deletar um filtro
+    function deleteFilter(id) {
+        let savedFilters = JSON.parse(localStorage.getItem('customFilters')) || [];
+        const updatedFilters = savedFilters.filter(f => f.id != id);
+        localStorage.setItem('customFilters', JSON.stringify(updatedFilters));
+        renderSavedFilters();
+    }
+
+    // Renderizar filtros ao carregar a página
+    renderSavedFilters();
+
 
     // Funções de Paginação
     function setupPagination(items) {
@@ -873,4 +1252,3 @@ document.addEventListener('DOMContentLoaded', () => {
             modalOverlay.style.display = 'none';
         }
     });
-});

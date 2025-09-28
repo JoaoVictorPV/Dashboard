@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title data-key="dashboard_title">Journal Search - Sistema de Busca Científica</title>
+    <title>Journal Search - Scientific Search System</title>
     <link rel="stylesheet" href="./lib/choices/choices.min.css">
     <link rel="stylesheet" href="./style.css?v=2">
     <meta charset="UTF-8">
@@ -12,54 +12,54 @@
         <div class="header-content">
             <div class="header-branding">
                 <img src="./logo.png" alt="Logo" class="header-logo">
-                <h1 class="header-title" data-key="header_title_dashboard">Painel de Periódicos Médicos</h1>
+                <h1 class="header-title">Medical Journals Dashboard</h1>
             </div>
             <nav class="main-nav">
                 <div class="lang-selector">
                     <a href="dashboard.html"><img src="https://flagsapi.com/BR/shiny/24.png" alt="Português" class="lang-flag"></a>
                     <a href="dashboard_en.html"><img src="https://flagsapi.com/US/shiny/24.png" alt="English" class="lang-flag"></a>
                 </div>
-                <a href="portal.html" class="btn btn-secondary" data-key="back_button">Voltar</a>
+                <a href="portal_en.html" class="btn btn-secondary">Back</a>
             </nav>
         </div>
     </header>
     <div id="dashboard">
         <div id="journal-management">
             <div class="title-with-tooltip">
-                <h2 data-key="search_config">Configuração da Busca</h2>
+                <h2>Search Configuration</h2>
                 <div class="tooltip">
                     <span class="tooltip-icon">?</span>
-                    <div class="tooltip-text" data-key="search_tooltip">
-                        A busca deverá ter um alcance máximo de 500 resultados.<br><br>
-                        As revistas listadas foram selecionadas pelo autor do site para permitir buscas específicas em uma ou mais publicações. Solicitações ou sugestões de novas revistas a serem listadas poderão ser solicitadas ao autor pelo botão de contato no rodapé.<br><br>
-                        A busca é realizada pela ferramenta para programadores "E-Utilities" disponibilizada pela Pubmed, não contemplando publicações fora do banco de dados da organização NLM (Maryland / USA).
+                    <div class="tooltip-text">
+                        The search will have a maximum range of 500 results.<br><br>
+                        The listed journals were selected by the site's author to allow specific searches in one or more publications. Requests or suggestions for new journals to be listed can be made to the author via the contact button in the footer.<br><br>
+                        The search is carried out by the "E-Utilities" programmer tool provided by Pubmed, and does not include publications outside the database of the NLM organization (Maryland / USA).
                     </div>
                 </div>
             </div>
-            <label for="journal-selector" data-key="select_journals">Selecionar Revistas:</label>
+            <label for="journal-selector">Select Journals:</label>
             <select id="journal-selector" multiple>
             </select>
             <br>
 
-            <label for="start-date" data-key="start_date">Data Inicial:</label>
+            <label for="start-date">Start Date:</label>
             <input type="date" id="start-date">
 
-            <label for="end-date" data-key="end_date">Data Final:</label>
+            <label for="end-date">End Date:</label>
             <input type="date" id="end-date">
             <br>
 
             <div class="date-buttons-group">
                 <div class="recent-periods">
-                    <button id="last-1-month">1 Mês</button>
-                    <button id="last-3-months">3 Meses</button>
-                    <button id="last-6-months">6 Meses</button>
-                    <button id="last-1-year">1 Ano</button>
+                    <button id="last-1-month">1 Month</button>
+                    <button id="last-3-months">3 Months</button>
+                    <button id="last-6-months">6 Months</button>
+                    <button id="last-1-year">1 Year</button>
                 </div>
                 <div class="recent-periods">
-                    <button id="last-15-months">15 Meses</button>
-                    <button id="last-18-months">18 Meses</button>
-                    <button id="last-21-months">21 Meses</button>
-                    <button id="last-2-years">2 Anos</button>
+                    <button id="last-15-months">15 Months</button>
+                    <button id="last-18-months">18 Months</button>
+                    <button id="last-21-months">21 Months</button>
+                    <button id="last-2-years">2 Years</button>
                 </div>
                 <div class="year-ranges">
                     <button id="range-2022-2024">2022-2024</button>
@@ -75,16 +75,16 @@
             </div>
             <br>
 
-            <label for="author" data-key="author">Autor:</label>
-            <input type="text" id="author" data-key="author_placeholder" placeholder="Nome do autor">
+            <label for="author">Author:</label>
+            <input type="text" id="author" placeholder="Author's name">
             <br>
 
-            <label for="keywords" data-key="keywords">Palavras-chave:</label>
-            <input type="text" id="keywords" data-key="keywords_placeholder" placeholder="Separar por vírgula">
+            <label for="keywords">Keywords:</label>
+            <input type="text" id="keywords" placeholder="Separate with commas">
             <br>
 
             <div class="checkbox-container">
-                <label for="open-access-only" class="checkbox-label" data-key="open_access_only">Apenas artigos Open Access</label>
+                <label for="open-access-only" class="checkbox-label">Open Access articles only</label>
                 <label class="toggle-switch">
                     <input type="checkbox" id="open-access-only" name="open-access-only">
                     <span class="slider"></span>
@@ -92,44 +92,44 @@
             </div>
 
             <div class="button-group">
-                <button id="search-button" data-key="search_button">Pesquisar</button>
-                <button id="clear-search-button" style="background: linear-gradient(135deg, #e74c3c, #ec7063) !important;" data-key="clear_params">Limpar Parâmetros</button>
+                <button id="search-button">Search</button>
+                <button id="clear-search-button" style="background: linear-gradient(135deg, #e74c3c, #ec7063) !important;">Clear Parameters</button>
             </div>
         </div>
         
         <div id="search-results">
-            <h2 data-key="search_results">Resultados da Busca</h2>
+            <h2>Search Results</h2>
             <div id="loading" style="display: none;">
                 <div class="loading-content">
                     <div class="loading-spinner"></div>
                     <div class="loading-message">
-                        <span id="loading-message-text" data-key="loading_message">Buscando no PubMed...</span>
+                        <span>Searching PubMed...</span>
                     </div>
                 </div>
             </div>
             
             <div id="results-info" style="display: none;">
-                <p><span data-key="total_found">Total de artigos encontrados:</span> <span id="total-count">0</span></p>
+                <p><span>Total articles found:</span> <span id="total-count">0</span></p>
                 <div id="search-summary" class="search-summary-class"></div>
             </div>
             
             <div id="table-controls" style="display: none;">
                 <div class="filter-controls">
-                    <input type="text" id="search-filter" data-key="filter_results" placeholder="Filtrar resultados...">
+                    <input type="text" id="search-filter" placeholder="Filter results...">
                     <select id="column-filter">
-                        <option value="" data-key="all_columns">Todas as colunas</option>
-                        <option value="TITULO DA PUBLICACAO" data-key="title_column">Título</option>
-                        <option value="AUTORES" data-key="authors_column">Autores</option>
-                        <option value="REVISTA" data-key="journal_column">Revista</option>
-                        <option value="DATA DE PUBLICACAO" data-key="date_column">Data</option>
-                        <option value="OPEN ACESS" data-key="open_access_column">Open Access</option>
+                        <option value="">All columns</option>
+                        <option value="TITULO DA PUBLICACAO">Title</option>
+                        <option value="AUTORES">Authors</option>
+                        <option value="REVISTA">Journal</option>
+                        <option value="DATA DE PUBLICACAO">Date</option>
+                        <option value="OPEN ACESS">Open Access</option>
                     </select>
-                    <button id="clear-filters" data-key="clear_filters">Limpar Filtros</button>
+                    <button id="clear-filters">Clear Filters</button>
                 </div>
                 
                 <div class="export-controls">
-                    <button id="export-html-button" data-key="export_html">Exportar HTML</button>
-                    <button id="fullscreen-button" data-key="fullscreen">Tela Cheia</button>
+                    <button id="export-html-button">Export HTML</button>
+                    <button id="fullscreen-button">Fullscreen</button>
                 </div>
             </div>
             
@@ -138,12 +138,12 @@
                 <table id="results-table">
                     <thead>
                         <tr>
-                            <th data-column="DATA DE PUBLICACAO" class="sortable col-date"><span data-key="date_header">Data</span> <span class="sort-arrow"></span></th>
-                            <th data-column="TITULO DA PUBLICACAO" class="sortable col-title"><span data-key="title_header">Título</span> <span class="sort-arrow"></span></th>
-                            <th data-column="REVISTA" class="sortable col-journal"><span data-key="journal_header">Revista</span> <span class="sort-arrow"></span></th>
-                            <th data-column="AUTORES" class="sortable col-authors"><span data-key="authors_header">Autores</span> <span class="sort-arrow"></span></th>
-                            <th data-column="LINK CANONICO" class="col-link"><span data-key="link_header">Link</span></th>
-                            <th data-column="OPEN ACESS" class="sortable col-access"><span data-key="open_access_header">Open Access</span> <span class="sort-arrow"></span></th>
+                            <th data-column="DATA DE PUBLICACAO" class="sortable col-date"><span>Date</span> <span class="sort-arrow"></span></th>
+                            <th data-column="TITULO DA PUBLICACAO" class="sortable col-title"><span>Title</span> <span class="sort-arrow"></span></th>
+                            <th data-column="REVISTA" class="sortable col-journal"><span>Journal</span> <span class="sort-arrow"></span></th>
+                            <th data-column="AUTORES" class="sortable col-authors"><span>Authors</span> <span class="sort-arrow"></span></th>
+                            <th data-column="LINK CANONICO" class="col-link"><span>Link</span></th>
+                            <th data-column="OPEN ACESS" class="sortable col-access"><span>Open Access</span> <span class="sort-arrow"></span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -154,97 +154,97 @@
         </div>
         <div id="custom-filters">
             <div class="title-with-tooltip">
-                <h2 data-key="custom_filters_title">Filtros Personalizados</h2>
+                <h2 data-key="custom_filters_title">Custom Filters</h2>
                 <div class="tooltip">
                     <span class="tooltip-icon">?</span>
                     <div class="tooltip-text" data-key="custom_filters_tooltip">
-                        Aqui você poderá salvar suas configurações de busca preferidas na forma de Filtros que serão exibidos como botões nesta seção. Será possível criar acesso imediato a revistas e intervalos temporais específicos (por exemplo.: Radigraphics ultimo mês, últimos 3 meses).<br><br>
-                        Basta clicar no ícone "+" e adicionar um novo Filtro que ficará salvo no seu usuário e poderá ser deletado a qualquer momento! Com isso, ficará mais fácil acompanhar periódicos que você assine, expondo-os de forma organizada e resumida no dashboard. Aproveite!
+                        Here you can save your preferred search settings as Filters, which will be displayed as buttons in this section. You can create immediate access to specific journals and time intervals (e.g., Radiographics last month, last 3 months).<br><br>
+                        Just click the "+" icon and add a new Filter that will be saved to your user account and can be deleted at any time! This will make it easier to follow journals you subscribe to, displaying them in an organized and summarized way on the dashboard. Enjoy!
                     </div>
                 </div>
             </div>
             <div class="add-filter-container">
-                <button id="add-filter-btn" class="add-filter-button" title="Adicionar novo filtro">+</button>
+                <button id="add-filter-btn" class="add-filter-button" title="Add new filter">+</button>
             </div>
             <div id="saved-filters-container">
-                <!-- Filtros salvos serão inseridos aqui via JS -->
+                <!-- Saved filters will be inserted here via JS -->
             </div>
         </div>
     </div>
 
-    <!-- Modal de Filtros -->
+    <!-- Filter Modal -->
     <div id="filter-modal" class="filter-modal-overlay">
         <div class="filter-modal-content">
             <div class="filter-modal-header">
-                <h3>Criar Novo Filtro</h3>
+                <h3>Create New Filter</h3>
                 <button id="close-filter-modal" class="close-modal-button">&times;</button>
             </div>
             <div class="filter-modal-body">
                 <div class="form-group">
-                    <label for="filter-name">Nome do Filtro:</label>
-                    <input type="text" id="filter-name" placeholder="Ex: Radiographics Último Mês">
+                    <label for="filter-name">Filter Name:</label>
+                    <input type="text" id="filter-name" placeholder="E.g., Radiographics Last Month">
                 </div>
                 <div class="form-group">
-                    <label for="filter-journal-selector">Selecionar Revistas:</label>
+                    <label for="filter-journal-selector">Select Journals:</label>
                     <select id="filter-journal-selector" multiple></select>
                 </div>
                 <div class="form-group">
-                    <label>Selecionar Período:</label>
+                    <label>Select Period:</label>
                     <div class="date-buttons-group modal-date-buttons">
                         <div class="recent-periods">
-                            <button data-period="1m">1 Mês</button>
-                            <button data-period="3m">3 Meses</button>
-                            <button data-period="6m">6 Meses</button>
-                            <button data-period="12m">1 Ano</button>
+                            <button data-period="1m">1 Month</button>
+                            <button data-period="3m">3 Months</button>
+                            <button data-period="6m">6 Months</button>
+                            <button data-period="12m">1 Year</button>
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Ou intervalo personalizado:</label>
+                    <label>Or custom range:</label>
                     <div class="custom-date-range">
                         <input type="date" id="filter-start-date">
-                        <span>até</span>
+                        <span>to</span>
                         <input type="date" id="filter-end-date">
                     </div>
                 </div>
             </div>
             <div class="filter-modal-footer">
-                <button id="save-filter-button" class="btn btn-primary">Salvar Filtro</button>
+                <button id="save-filter-button" class="btn btn-primary">Save Filter</button>
             </div>
         </div>
     </div>
 
     <footer class="main-footer-credits">
         <p>
-            <span class="footer-icon">🔬</span><span data-key="footer_credits">Website desenvolvido pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</span>
+            <span class="footer-icon">🔬</span><span>Website developed by radiologist João Victor Pruner Vieira (CRM/PR 30289). All rights reserved.</span>
             <span class="email-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
             </span>
         </p>
         <div id="visitor-counter">
-            <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fjoaovictorpv.github.io%2FDashboard%2Fexperimento%2F&label=Visitantes&countColor=%2364FFDA&style=flat" alt="Visitor Counter"/>
+            <img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fjoaovictorpv.github.io%2FDashboard%2Fexperimento%2F&label=Visitors&countColor=%2364FFDA&style=flat" alt="Visitor Counter"/>
         </div>
     </footer>
 
-    <!-- Modal de Tela Cheia -->
+    <!-- Fullscreen Modal -->
     <div id="modal-overlay" class="modal-overlay">
         <div class="modal-content">
             <button id="modal-close-button" class="modal-close-button">&times;</button>
             <div id="modal-table-container">
-                <!-- A tabela será renderizada aqui via JS -->
+                <!-- The table will be rendered here via JS -->
             </div>
         </div>
     </div>
 
-    <!-- Formulário de Contato Pop-up -->
+    <!-- Contact Form Pop-up -->
     <div id="contact-popup">
         <div class="popup-header">
-            <h3>Contato</h3>
+            <h3>Contact</h3>
             <button class="close-popup">&times;</button>
         </div>
         <form class="popup-form" action="https://formspree.io/f/mgvnonzo" method="POST">
             <div class="form-group">
-                <label for="name">Nome</label>
+                <label for="name">Name</label>
                 <input type="text" id="name" name="name" required>
             </div>
             <div class="form-group">
@@ -252,14 +252,14 @@
                 <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
-                <label for="subject">Título</label>
+                <label for="subject">Subject</label>
                 <input type="text" id="subject" name="subject" required>
             </div>
             <div class="form-group">
-                <label for="message">Comentários</label>
+                <label for="message">Comments</label>
                 <textarea id="message" name="message" required></textarea>
             </div>
-            <button type="submit">Enviar</button>
+            <button type="submit">Submit</button>
         </form>
     </div>
 
@@ -279,7 +279,7 @@
                     contactPopup.classList.remove('show');
                 });
 
-                // Fecha o pop-up se clicar fora dele
+                // Close pop-up if clicking outside of it
                 document.addEventListener('click', function(event) {
                     if (contactPopup.classList.contains('show') && !contactPopup.contains(event.target) && !emailIcon.contains(event.target)) {
                         contactPopup.classList.remove('show');

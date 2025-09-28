@@ -26,9 +26,15 @@ body {
     margin: 0 auto;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 20px;
     padding: 0 20px;
+}
+
+.header-branding {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 .header-logo {
@@ -58,24 +64,22 @@ h2 {
 
 /* Layout principal */
 #dashboard {
-    max-width: 1400px;
+    max-width: 1600px; /* Aumenta a largura máxima para acomodar 3 colunas */
     margin: 0 auto;
     padding: 20px;
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 380px 1fr 380px; /* Colunas para busca, resultados e filtros */
     gap: 30px;
 }
 
 /* Seção de gerenciamento de revistas */
-#journal-management {
+#journal-management, #custom-filters {
     background: #112240; /* Azul escuro secundário */
     border: 1px solid #233554;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     height: fit-content;
-    min-width: 320px;
-    max-width: 380px;
 }
 
 #journal-management label {
@@ -141,22 +145,32 @@ h2 {
     text-align: center;
 }
 
-.recent-periods,
+.recent-periods {
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center; /* Centraliza os botões */
+    gap: 6px;
+}
+
 .year-ranges {
     margin-bottom: 12px;
     display: flex;
-    justify-content: center;
+    justify-content: center; /* Centraliza os botões */
     flex-wrap: wrap;
     gap: 6px;
+    max-width: 300px; /* Força a quebra para 3 botões por linha */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .recent-periods button {
     background: transparent;
     color: #20c997;
     border: 1px solid #20c997;
-    padding: 8px 14px;
+    padding: 8px 10px; /* Reduz mais o padding para garantir o ajuste */
     border-radius: 4px;
     cursor: pointer;
+    flex-shrink: 0; /* Impede que os botões encolham */
     font-size: 11px;
     font-weight: 600;
     transition: all 0.3s ease;
@@ -629,12 +643,12 @@ input:checked + .slider:before {
 }
 
 /* Larguras fixas das colunas */
-.col-date { width: 10%; }
-.col-title { width: 30%; } /* Reduzido */
+.col-date { width: 13%; }
+.col-title { width: 34%; } /* Aumentado */
 .col-journal { width: 20%; }
-.col-authors { width: 15%; } /* Reduzido */
-.col-link { width: 12%; text-align: center; } /* Aumentado */
-.col-access { width: 13%; text-align: center; } /* Aumentado */
+.col-authors { width: 14%; }
+.col-link { width: 9%; text-align: center; } /* Reduzido */
+.col-access { width: 10%; text-align: center; } /* Reduzido */
 
 /* Layout estático do painel esquerdo */
 #journal-management {
@@ -677,8 +691,9 @@ input:checked + .slider:before {
     padding: 12px 10px;
     border-bottom: 1px solid #555;
     vertical-align: top;
-    white-space: normal; /* Mostrar todo o conteúdo */
-    word-break: break-word; /* Força a quebra de palavras longas */
+    white-space: nowrap; /* Impede a quebra de linha */
+    overflow: hidden; /* Oculta o conteúdo que transborda */
+    text-overflow: ellipsis; /* Adiciona "..." ao final do texto */
     color: #e0e0e0;
 }
 
@@ -1311,9 +1326,18 @@ select:focus {
     border-color: #20c997;
 }
 
+.form-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.form-buttons .btn {
+    flex: 1;
+}
+
 .login-container button {
     width: 100%;
-    margin-top: 10px;
 }
 
 .error-message {
@@ -1409,4 +1433,398 @@ select:focus {
         flex-direction: row; /* Mantém na mesma linha */
         justify-content: space-between;
     }
+}
+
+/* === ESTILOS PARA SELETOR DE IDIOMA === */
+
+.lang-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 15px; /* Adiciona espaçamento à direita */
+}
+
+.lang-flag {
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.lang-flag:hover {
+    transform: scale(1.1);
+    opacity: 0.9;
+}
+
+/* === ESTILOS PARA TOOLTIP DE AJUDA === */
+
+.title-with-tooltip h2 {
+    font-size: 1.6rem; /* Aumenta o tamanho da fonte */
+}
+
+.title-with-tooltip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    vertical-align: middle;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltip-icon {
+    width: 20px;
+    height: 20px;
+    background-color: #20c997;
+    color: #0a192f;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: 300px;
+    background-color: #112240;
+    color: #ccd6f6;
+    text-align: left;
+    border-radius: 6px;
+    padding: 15px;
+    position: absolute;
+    z-index: 100;
+    top: 125%; /* Abre para baixo */
+    left: 50%;
+    margin-left: -150px; /* Use half of the width to center the tooltip */
+    opacity: 0;
+    transition: opacity 0.3s;
+    border: 1px solid #233554;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+.email-icon {
+    text-decoration: none;
+    font-size: 1.2rem;
+    margin-left: 15px;
+    vertical-align: middle;
+    cursor: pointer; /* Torna o ícone clicável */
+    transition: color 0.3s ease;
+}
+
+.email-icon:hover {
+    color: #20c997; /* Cor de destaque no hover */
+}
+
+/* === Estilos do Formulário de Contato Pop-up === */
+#contact-popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    background: #112240;
+    border: 1px solid #233554;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    z-index: 1001;
+    transform: translateY(100%) scale(0.9);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.4s ease, opacity 0.4s ease, visibility 0.4s;
+}
+
+#contact-popup.show {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #233554;
+}
+
+.popup-header h3 {
+    font-size: 1.2rem;
+    color: #ccd6f6;
+    margin: 0;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    color: #8892b0;
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.3s ease;
+}
+
+.close-popup:hover {
+    color: #e6f1ff;
+}
+
+.popup-form {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.popup-form .form-group {
+    margin-bottom: 0;
+}
+
+.popup-form .form-group label {
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.popup-form .form-group input,
+.popup-form .form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #233554;
+    border-radius: 4px;
+    background: #0a192f;
+    color: #e6f1ff;
+    font-size: 0.95rem;
+}
+
+.popup-form .form-group input:focus,
+.popup-form .form-group textarea:focus {
+    outline: none;
+    border-color: #20c997;
+}
+
+.popup-form .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.popup-form button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-color: #20c997;
+    color: #0a192f;
+    border: 1px solid #20c997;
+}
+
+.popup-form button:hover {
+    background-color: transparent;
+    color: #20c997;
+}
+
+/* === ESTILOS PARA FILTROS PERSONALIZADOS === */
+
+.add-filter-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 20px 0; /* Espaçamento acima e abaixo do botão + */
+}
+
+.title-with-tooltip {
+    /* Reset margin from previous attempts if any */
+    margin-bottom: 0; 
+}
+
+.filter-header h2 {
+    margin-bottom: 0; 
+    border-bottom: none; 
+}
+
+.add-filter-button {
+    width: 36px; /* Aumentado */
+    height: 36px; /* Aumentado */
+    background-color: #20c997;
+    color: #0a192f;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: all 0.3s ease;
+}
+
+.add-filter-button:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 0 10px rgba(32, 201, 151, 0.5);
+}
+
+#saved-filters-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.saved-filter-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #233554;
+    color: #ccd6f6;
+    border: 1px solid #233554;
+    padding: 12px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.saved-filter-button:hover {
+    background-color: #20c997;
+    color: #0a192f;
+    border-color: #20c997;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.saved-filter-button strong {
+    font-weight: 600;
+    font-size: 1.05em;
+}
+
+.saved-filter-button .filter-summary {
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.delete-filter-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    transition: color 0.3s ease;
+}
+
+.delete-filter-btn:hover {
+    color: #c0392b;
+}
+
+
+/* === ESTILOS PARA O MODAL DE FILTROS === */
+
+.filter-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 25, 47, 0.85);
+    display: none; /* Começa oculto */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.filter-modal-content {
+    background: #112240;
+    padding: 0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.filter-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 1px solid #233554;
+}
+
+.filter-modal-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #ccd6f6;
+}
+
+.close-modal-button {
+    background: none;
+    border: none;
+    color: #ccd6f6;
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.filter-modal-body {
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.filter-modal-body .form-group label {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.filter-modal-body .form-group input[type="text"],
+.filter-modal-body .form-group input[type="date"] {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #233554;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #0a192f;
+    color: #ccd6f6;
+}
+
+.custom-date-range {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.custom-date-range span {
+    color: #8892b0;
+}
+
+.modal-date-buttons .recent-periods button {
+    flex-grow: 1; /* Faz os botões ocuparem o espaço */
+}
+
+.filter-modal-footer {
+    padding: 20px 25px;
+    border-top: 1px solid #233554;
+    display: flex;
+    justify-content: flex-end;
 }

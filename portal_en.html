@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-key="login_title">Login - Dashboard de Revistas Médicas</title>
+    <title>Content Portal - Medical Journals Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,54 +11,67 @@
         <div class="header-content">
             <div class="header-branding">
                 <img src="./logo.png" alt="Logo" class="header-logo">
-                <h1 class="header-title" data-key="header_title_main">Dashboard de Revistas Médicas</h1>
+                <h1 class="header-title">Content Portal</h1>
             </div>
-            <div class="lang-selector">
-                <a href="login.html"><img src="https://flagsapi.com/BR/shiny/24.png" alt="Português" class="lang-flag"></a>
-                <a href="login_en.html"><img src="https://flagsapi.com/US/shiny/24.png" alt="English" class="lang-flag"></a>
-            </div>
+            <nav class="main-nav">
+                <div class="lang-selector">
+                    <a href="portal.html"><img src="https://flagsapi.com/BR/shiny/24.png" alt="Português" class="lang-flag"></a>
+                    <a href="portal_en.html"><img src="https://flagsapi.com/US/shiny/24.png" alt="English" class="lang-flag"></a>
+                </div>
+                <button id="logout-button" class="btn btn-secondary">Logout</button>
+            </nav>
         </div>
     </header>
 
     <main class="container">
-        <div class="login-container">
-            <form id="login-form">
-                <h2 data-key="login_form_title">Acesso à Plataforma</h2>
-                <div class="form-group">
-                    <label for="username" data-key="username">Usuário</label>
-                    <input type="text" id="username" name="username" required>
+        <section class="welcome-section">
+            <h2>Welcome, Admin!</h2>
+            <p>Explore our exclusive content and access the search tools.</p>
+        </section>
+
+        <section class="dashboard-access">
+            <div>
+                <h3>Dashboard Access</h3>
+                <p>Use our advanced search tool to find scientific articles.</p>
+            </div>
+            <a href="dashboard_en.html" class="btn btn-primary">Open Dashboard</a>
+        </section>
+
+        <section class="video-content">
+            <h3>Video Content</h3>
+            <div class="video-gallery">
+                <!-- Placeholder for videos -->
+                <div class="video-item-placeholder">
+                    <p>Video 1 coming soon</p>
                 </div>
-                <div class="form-group">
-                    <label for="password" data-key="password">Senha</label>
-                    <input type="password" id="password" name="password" required>
+                <div class="video-item-placeholder">
+                    <p>Video 2 coming soon</p>
                 </div>
-                <p id="error-message" class="error-message"></p>
-                <div class="form-buttons">
-                    <button type="submit" class="btn btn-primary" data-key="login_button">Entrar</button>
-                    <a href="index.html" class="btn btn-secondary" data-key="back_button">Voltar</a>
+                <div class="video-item-placeholder">
+                    <p>Video 3 coming soon</p>
                 </div>
-            </form>
-        </div>
+            </div>
+        </section>
     </main>
 
     <footer class="main-footer-credits">
         <p>
-            <span class="footer-icon">🔬</span><span data-key="footer_credits">Website desenvolvido pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</span>
+            <span class="footer-icon">🔬</span><span>Website developed by radiologist João Victor Pruner Vieira (CRM/PR 30289). All rights reserved.</span>
             <span class="email-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
             </span>
         </p>
     </footer>
 
-    <!-- Formulário de Contato Pop-up -->
+    <!-- Contact Form Pop-up -->
     <div id="contact-popup">
         <div class="popup-header">
-            <h3>Contato</h3>
+            <h3>Contact</h3>
             <button class="close-popup">&times;</button>
         </div>
         <form class="popup-form" action="https://formspree.io/f/mgvnonzo" method="POST">
             <div class="form-group">
-                <label for="name">Nome</label>
+                <label for="name">Name</label>
                 <input type="text" id="name" name="name" required>
             </div>
             <div class="form-group">
@@ -66,14 +79,14 @@
                 <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
-                <label for="subject">Título</label>
+                <label for="subject">Subject</label>
                 <input type="text" id="subject" name="subject" required>
             </div>
             <div class="form-group">
-                <label for="message">Comentários</label>
+                <label for="message">Comments</label>
                 <textarea id="message" name="message" required></textarea>
             </div>
-            <button type="submit">Enviar</button>
+            <button type="submit">Submit</button>
         </form>
     </div>
 
@@ -93,7 +106,7 @@
                     contactPopup.classList.remove('show');
                 });
 
-                // Fecha o pop-up se clicar fora dele
+                // Close pop-up if clicking outside of it
                 document.addEventListener('click', function(event) {
                     if (contactPopup.classList.contains('show') && !contactPopup.contains(event.target) && !emailIcon.contains(event.target)) {
                         contactPopup.classList.remove('show');
@@ -103,6 +116,6 @@
         });
     </script>
 
-    <script src="login.js" defer></script>
+    <script src="main.js" defer></script>
 </body>
 </html>

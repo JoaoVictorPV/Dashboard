@@ -3,53 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Conteúdo - Dashboard de Revistas Médicas</title>
+    <title data-key="portal_title">Portal de Conteúdo - Dashboard de Revistas Médicas</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="main-header">
         <div class="header-content">
-            <img src="./logo.png" alt="Logo" class="header-logo">
-            <h1 class="header-title">Portal de Conteúdo</h1>
+            <div class="header-branding">
+                <img src="./logo.png" alt="Logo" class="header-logo">
+                <h1 class="header-title" data-key="header_title_portal">Portal de Conteúdo</h1>
+            </div>
             <nav class="main-nav">
-                <button id="logout-button" class="btn btn-secondary">Sair</button>
+                <div class="lang-selector">
+                    <a href="portal.html"><img src="https://flagsapi.com/BR/shiny/24.png" alt="Português" class="lang-flag"></a>
+                    <a href="portal_en.html"><img src="https://flagsapi.com/US/shiny/24.png" alt="English" class="lang-flag"></a>
+                </div>
+                <button id="logout-button" class="btn btn-secondary" data-key="logout_button">Sair</button>
             </nav>
         </div>
     </header>
 
     <main class="container">
         <section class="welcome-section">
-            <h2>Bem-vindo, Admin!</h2>
-            <p>Explore nosso conteúdo exclusivo e acesse as ferramentas de pesquisa.</p>
+            <h2 data-key="portal_welcome">Bem-vindo, Admin!</h2>
+            <p data-key="portal_welcome_p">Explore nosso conteúdo exclusivo e acesse as ferramentas de pesquisa.</p>
         </section>
 
         <section class="dashboard-access">
-            <h3>Acesso ao Dashboard</h3>
-            <p>Utilize nossa ferramenta de busca avançada para encontrar artigos científicos.</p>
-            <a href="dashboard.html" class="btn btn-primary">Abrir Dashboard</a>
+            <div>
+                <h3 data-key="dashboard_access">Acesso ao Dashboard</h3>
+                <p data-key="dashboard_access_p">Utilize nossa ferramenta de busca avançada para encontrar artigos científicos.</p>
+            </div>
+            <a href="dashboard.html" class="btn btn-primary" data-key="open_dashboard">Abrir Dashboard</a>
         </section>
 
         <section class="video-content">
-            <h3>Conteúdo em Vídeo</h3>
+            <h3 data-key="video_content">Conteúdo em Vídeo</h3>
             <div class="video-gallery">
                 <!-- Placeholder para vídeos -->
                 <div class="video-item-placeholder">
-                    <p>Vídeo 1 em breve</p>
+                    <p data-key="video_1">Vídeo 1 em breve</p>
                 </div>
                 <div class="video-item-placeholder">
-                    <p>Vídeo 2 em breve</p>
+                    <p data-key="video_2">Vídeo 2 em breve</p>
                 </div>
                 <div class="video-item-placeholder">
-                    <p>Vídeo 3 em breve</p>
+                    <p data-key="video_3">Vídeo 3 em breve</p>
                 </div>
             </div>
         </section>
     </main>
 
     <footer class="main-footer-credits">
-        <p><span class="footer-icon">🔬</span>Website desenvolvido pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</p>
+        <p>
+            <span class="footer-icon">🔬</span><span data-key="footer_credits">Website desenvolvido pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</span>
+            <span class="email-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            </span>
+        </p>
     </footer>
 
-    <script src="main.js"></script>
+    <!-- Formulário de Contato Pop-up -->
+    <div id="contact-popup">
+        <div class="popup-header">
+            <h3>Contato</h3>
+            <button class="close-popup">&times;</button>
+        </div>
+        <form class="popup-form" action="https://formspree.io/f/mgvnonzo" method="POST">
+            <div class="form-group">
+                <label for="name">Nome</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="subject">Título</label>
+                <input type="text" id="subject" name="subject" required>
+            </div>
+            <div class="form-group">
+                <label for="message">Comentários</label>
+                <textarea id="message" name="message" required></textarea>
+            </div>
+            <button type="submit">Enviar</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const emailIcon = document.querySelector('.email-icon');
+            const contactPopup = document.getElementById('contact-popup');
+            const closePopupButton = document.querySelector('.close-popup');
+
+            if (emailIcon && contactPopup && closePopupButton) {
+                emailIcon.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    contactPopup.classList.add('show');
+                });
+
+                closePopupButton.addEventListener('click', function() {
+                    contactPopup.classList.remove('show');
+                });
+
+                // Fecha o pop-up se clicar fora dele
+                document.addEventListener('click', function(event) {
+                    if (contactPopup.classList.contains('show') && !contactPopup.contains(event.target) && !emailIcon.contains(event.target)) {
+                        contactPopup.classList.remove('show');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script src="main.js" defer></script>
 </body>
 </html>

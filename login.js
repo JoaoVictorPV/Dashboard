@@ -13,11 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (username === 'admin' && password === 'admin') {
                 // Se as credenciais estiverem corretas, marca o usuário como logado
                 sessionStorage.setItem('userIsLoggedIn', 'true');
-                // Redireciona para o portal de conteúdo
-                window.location.href = 'portal.html';
+                
+                // Redireciona para o portal de conteúdo no idioma correto
+                if (window.location.pathname.includes('login_en.html')) {
+                    window.location.href = 'portal_en.html';
+                } else {
+                    window.location.href = 'portal.html';
+                }
             } else {
-                // Se as credenciais estiverem erradas, exibe uma mensagem de erro
-                errorMessage.textContent = 'Usuário ou senha inválidos.';
+                // Se as credenciais estiverem erradas, exibe uma mensagem de erro no idioma correto
+                const lang = document.documentElement.lang;
+                const errorMessageText = lang.startsWith('en') ? 'Invalid username or password.' : 'Usuário ou senha inválidos.';
+                errorMessage.textContent = errorMessageText;
                 errorMessage.style.display = 'block';
             }
         });
