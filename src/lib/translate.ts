@@ -77,7 +77,12 @@ export async function translateArticleContent(
   const availability = await Translator.availability(options);
   if (availability === 'unavailable') throw new Error('O pacote de tradução inglês–português não está disponível neste navegador.');
 
-  const translator = await Translator.create(options);
+  let translator: TranslatorInstance;
+  try {
+    translator = await Translator.create(options);
+  } catch {
+    throw new Error('O tradutor integrado não pôde ser iniciado. Abra o Atlas no Chrome atualizado em um computador e tente novamente.');
+  }
   const cache = readCache();
   const translated: Record<string, { title: string; abstract?: string }> = {};
   const total = articles.length + articles.filter((article) => article.abstract).length;
