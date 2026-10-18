@@ -8,8 +8,8 @@ import {
   setJournalFolderMembership,
   type JournalFolder,
 } from '../lib/journalFavorites';
-import { daysAgoIso, uid } from '../lib/query';
-import type { AuthorTerm, Journal, KeywordField, KeywordTerm, Operator, SearchFilters } from '../types';
+import { relativeDateRange, uid } from '../lib/query';
+import type { AuthorTerm, DatePreset, Journal, KeywordField, KeywordTerm, Operator, SearchFilters } from '../types';
 import { Icon } from './Icon';
 
 interface Props {
@@ -121,9 +121,12 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
   const listedJournalIds = [...favoriteJournals, ...otherJournals].map((journal) => journal.id);
   const allListedJournalsSelected = listedJournalIds.length > 0 && listedJournalIds.every((id) => filters.journalIds.includes(id));
 
-  const applyPreset = (days: number | null) => {
-    onChange({ ...filters, dateFrom: days ? daysAgoIso(days) : '', dateTo: days ? new Date().toISOString().slice(0, 10) : '' });
+  const applyPreset = (preset: DatePreset | null) => {
+    onChange(preset
+      ? { ...filters, ...relativeDateRange(preset), datePreset: preset }
+      : { ...filters, dateFrom: '', dateTo: '', datePreset: null });
   };
+  const updateExactDate = (key: 'dateFrom' | 'dateTo', value: string) => onChange({ ...filters, [key]: value, datePreset: null });
 
   const canSearch = Boolean(query);
   const toggleJournal = (id: string) => update('journalIds', filters.journalIds.includes(id) ? filters.journalIds.filter((item) => item !== id) : [...filters.journalIds, id]);
@@ -228,8 +231,11 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
 
       <div className="field-card date-card">
         <div className="field-title"><span className="field-icon amber"><Icon name="calendar" /></span><div><span className="label-like">Intervalo de publicação</span><small>Atalhos ou datas exatas</small></div></div>
-        <div className="date-presets"><button onClick={() => applyPreset(30)}>30 dias</button><button onClick={() => applyPreset(180)}>6 meses</button><button onClick={() => applyPreset(365)}>1 ano</button><button onClick={() => applyPreset(1825)}>5 anos</button><button onClick={() => applyPreset(null)}>Tudo</button></div>
-        <div className="date-range"><label>De<input type="date" value={filters.dateFrom} max={filters.dateTo || undefined} onChange={(event) => update('dateFrom', event.target.value)} /></label><span>→</span><label>Até<input type="date" value={filters.dateTo} min={filters.dateFrom || undefined} onChange={(event) => update('dateTo', event.target.value)} /></label></div>
+        <div className="date-presets">
+          {([['30d', '30 dias'], ['90d', '90 dias'], ['6m', '6 meses'], ['1y', '1 ano'], ['2y', '2 anos'], ['5y', '5 anos']] as [DatePreset, string][]).map(([preset, label]) => <button key={preset} className={filters.datePreset === preset ? 'active' : ''} aria-pressed={filters.datePreset === preset} onClick={() => applyPreset(preset)}>{label}</button>)}
+          <button className={!filters.datePreset && !filters.dateFrom && !filters.dateTo ? 'active' : ''} aria-pressed={!filters.datePreset && !filters.dateFrom && !filters.dateTo} onClick={() => applyPreset(null)}>Tudo</button>
+        </div>
+        <div className="date-range"><label>De<input type="date" value={filters.dateFrom} max={filters.dateTo || undefined} onChange={(event) => updateExactDate('dateFrom', event.target.value)} /></label><span>→</span><label>Até<input type="date" value={filters.dateTo} min={filters.dateFrom || undefined} onChange={(event) => updateExactDate('dateTo', event.target.value)} /></label></div>
       </div>
     </div>
 

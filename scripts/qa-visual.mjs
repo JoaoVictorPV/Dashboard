@@ -58,6 +58,17 @@ try {
   await dialog.getByRole('button', { name: 'Concluir' }).click();
   report.desktop.favoritePersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-favorite-journals-v1') || '[]').length > 0);
   report.desktop.folderPersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-journal-folders-v2') || '[]').some((folder) => folder.name === 'Imagem' && folder.journalIds.length > 0));
+  await desktop.getByRole('button', { name: '90 dias', exact: true }).click();
+  report.desktop.relativePresetActive = await desktop.getByRole('button', { name: '90 dias', exact: true }).getAttribute('aria-pressed') === 'true';
+  await desktop.getByRole('button', { name: /Salvar busca/ }).click();
+  const saveDialog = desktop.getByRole('dialog', { name: 'Salvar busca' });
+  await saveDialog.getByLabel('Nome').fill('Radiology · últimos 90 dias');
+  await saveDialog.getByRole('button', { name: 'Salvar', exact: true }).click();
+  report.desktop.relativePresetPersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-saved-searches-v2') || '[]')[0]?.filters?.datePreset === '90d');
+  await desktop.getByRole('button', { name: /Buscas salvas/ }).click();
+  report.desktop.relativePresetLabel = await desktop.getByText(/Últimos 90 dias/).isVisible();
+  await desktop.locator('.saved-drawer li').first().locator('button').first().click();
+  report.desktop.relativePresetRestored = await desktop.getByRole('button', { name: '90 dias', exact: true }).getAttribute('aria-pressed') === 'true';
   await desktop.getByRole('button', { name: /Pesquisar no PubMed/ }).click();
   await desktop.getByRole('heading', { name: /artigos/ }).waitFor();
   report.desktop.hasNoGlobalAbstractButton = await desktop.getByRole('button', { name: /Abrir resumos|Recolher resumos/ }).count() === 0;
@@ -89,7 +100,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.mobile.modalScrollWidth > report.mobile.width || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
+if (overflow || report.mobile.modalScrollWidth > report.mobile.width || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {
