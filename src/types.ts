@@ -26,6 +26,11 @@ export interface AuthorTerm {
   operator: Operator;
 }
 
+export interface AuthorAffiliation {
+  name: string;
+  affiliations: string[];
+}
+
 export interface SearchFilters {
   keywords: KeywordTerm[];
   authors: AuthorTerm[];

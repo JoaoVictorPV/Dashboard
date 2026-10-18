@@ -112,7 +112,7 @@ export const emptyFilters = (): SearchFilters => ({
   dateFrom: '',
   dateTo: '',
   datePreset: null,
-  freeFullText: true,
+  freeFullText: false,
   sort: 'newest',
 });
 

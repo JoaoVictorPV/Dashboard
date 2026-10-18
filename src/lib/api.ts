@@ -1,4 +1,4 @@
-import type { PubMedArticle, SearchResponse, SortMode } from '../types';
+import type { AuthorAffiliation, PubMedArticle, SearchResponse, SortMode } from '../types';
 
 async function jsonRequest<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -35,4 +35,11 @@ export function fetchAbstracts(pmids: string[]) {
   if (!uniquePmids.length) return Promise.resolve({} as Record<string, string>);
   return jsonRequest<{ abstracts: Record<string, string> }>(`/api/pubmed/details?pmids=${encodeURIComponent(uniquePmids.join(','))}`)
     .then((response) => response.abstracts);
+}
+
+export function fetchAuthorAffiliations(pmids: string[]) {
+  const uniquePmids = [...new Set(pmids)].slice(0, 25);
+  if (!uniquePmids.length) return Promise.resolve({} as Record<string, AuthorAffiliation[]>);
+  return jsonRequest<{ affiliations?: Record<string, AuthorAffiliation[]> }>(`/api/pubmed/details?pmids=${encodeURIComponent(uniquePmids.join(','))}`)
+    .then((response) => response.affiliations ?? {});
 }
