@@ -42,12 +42,22 @@ try {
   await selectAllJournals.click();
   report.desktop.selectAllJournals = await dialog.getByRole('button', { name: 'Desmarcar todas', exact: true }).count() === 1;
   await dialog.getByRole('button', { name: 'Limpar', exact: true }).click();
-  const radiologyStar = dialog.getByRole('button', { name: 'Adicionar Radiology aos favoritos', exact: true });
+  await dialog.getByRole('button', { name: 'Criar pasta', exact: true }).click();
+  await dialog.getByLabel('Nome da pasta').fill('Imagem');
+  await dialog.getByRole('button', { name: 'Salvar', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Catálogo' }).click();
+  const radiologyStar = dialog.getByRole('button', { name: 'Organizar Radiology em pastas', exact: true });
   await radiologyStar.click();
+  await desktop.screenshot({ path: resolve(output, 'desktop-folder-menu.png') });
+  await dialog.getByRole('group', { name: 'Pastas de Radiology', exact: true }).getByLabel('Imagem').check();
+  await radiologyStar.click();
+  await dialog.getByRole('button', { name: 'Imagem' }).click();
+  report.desktop.folderNavigation = await dialog.getByText('Radiology', { exact: true }).count() > 0;
   await dialog.getByText('Radiology', { exact: true }).first().click();
   await desktop.screenshot({ path: resolve(output, 'desktop-journals.png') });
   await dialog.getByRole('button', { name: 'Concluir' }).click();
   report.desktop.favoritePersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-favorite-journals-v1') || '[]').length > 0);
+  report.desktop.folderPersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-journal-folders-v2') || '[]').some((folder) => folder.name === 'Imagem' && folder.journalIds.length > 0));
   await desktop.getByRole('button', { name: /Pesquisar no PubMed/ }).click();
   await desktop.getByRole('heading', { name: /artigos/ }).waitFor();
   report.desktop.hasNoGlobalAbstractButton = await desktop.getByRole('button', { name: /Abrir resumos|Recolher resumos/ }).count() === 0;
@@ -71,6 +81,7 @@ try {
   const mobileDialog = mobile.getByRole('dialog', { name: /Revistas/ });
   await mobileDialog.getByPlaceholder(/Buscar revistas/).fill('Radiology');
   report.mobile.selectAllVisible = await mobileDialog.getByRole('button', { name: 'Selecionar todas', exact: true }).isVisible();
+  report.mobile.folderNavigation = await mobileDialog.getByRole('button', { name: 'Todos os favoritos' }).isVisible() && await mobileDialog.getByRole('button', { name: 'Criar pasta', exact: true }).isVisible();
   report.mobile.modalScrollWidth = await mobile.evaluate(() => document.documentElement.scrollWidth);
   await mobile.screenshot({ path: resolve(output, 'mobile-journals.png') });
 } finally {
@@ -78,7 +89,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.mobile.modalScrollWidth > report.mobile.width || !report.mobile.selectAllVisible || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.selectAllJournals || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
+if (overflow || report.mobile.modalScrollWidth > report.mobile.width || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {

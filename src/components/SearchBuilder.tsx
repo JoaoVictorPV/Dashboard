@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  DEFAULT_FOLDER_ID,
+  favoriteJournalIds as collectFavoriteJournalIds,
+  persistJournalFolders,
+  readJournalFolders,
+  setJournalFolderMembership,
+  type JournalFolder,
+} from '../lib/journalFavorites';
 import { daysAgoIso, uid } from '../lib/query';
 import type { AuthorTerm, Journal, KeywordField, KeywordTerm, Operator, SearchFilters } from '../types';
 import { Icon } from './Icon';
@@ -21,13 +29,8 @@ const fieldOptions: { value: KeywordField; label: string }[] = [
   { value: 'all', label: 'Todos os campos' },
 ];
 
-const FAVORITES_KEY = 'atlas-medico-favorite-journals-v1';
 const JOURNAL_PAGE_SIZE = 200;
-
-function readFavorites(): string[] {
-  try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]') as string[]; }
-  catch { return []; }
-}
+type FolderEditor = { mode: 'create' | 'rename'; value: string; journalId?: string };
 
 function normalizeSearch(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
@@ -51,7 +54,10 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
   const [queryOpen, setQueryOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
   const [journalLimit, setJournalLimit] = useState(JOURNAL_PAGE_SIZE);
-  const [favoriteJournalIds, setFavoriteJournalIds] = useState<string[]>(readFavorites);
+  const [favoriteFolders, setFavoriteFolders] = useState<JournalFolder[]>(readJournalFolders);
+  const [journalScope, setJournalScope] = useState('catalog');
+  const [folderEditor, setFolderEditor] = useState<FolderEditor | null>(null);
+  const [folderMenuJournalId, setFolderMenuJournalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!journalOpen) return;
@@ -62,7 +68,7 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
     return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', closeOnEscape); };
   }, [journalOpen]);
 
-  useEffect(() => { setJournalLimit(JOURNAL_PAGE_SIZE); }, [journalSearch]);
+  useEffect(() => { setJournalLimit(JOURNAL_PAGE_SIZE); }, [journalSearch, journalScope]);
 
   const update = <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => onChange({ ...filters, [key]: value });
   const addKeywords = (raw: string) => {
@@ -82,9 +88,17 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
   const updateKeyword = (id: string, patch: Partial<KeywordTerm>) => update('keywords', filters.keywords.map((item) => item.id === id ? { ...item, ...patch } : item));
   const updateAuthor = (id: string, patch: Partial<AuthorTerm>) => update('authors', filters.authors.map((item) => item.id === id ? { ...item, ...patch } : item));
 
+  const favoriteJournalIds = useMemo(() => collectFavoriteJournalIds(favoriteFolders), [favoriteFolders]);
+  const activeFolder = favoriteFolders.find((folder) => folder.id === journalScope);
+  const scopedJournals = useMemo(() => {
+    if (journalScope === 'catalog') return journals;
+    const ids = new Set(journalScope === 'favorites' ? favoriteJournalIds : favoriteFolders.find((folder) => folder.id === journalScope)?.journalIds ?? []);
+    return journals.filter((journal) => ids.has(journal.id));
+  }, [favoriteFolders, favoriteJournalIds, journalScope, journals]);
+
   const filteredJournals = useMemo(() => {
     const term = normalizeSearch(journalSearch);
-    if (!term) return journals;
+    if (!term) return scopedJournals;
     const score = (journal: Journal) => {
       const name = normalizeSearch(journal.name);
       const abbreviation = normalizeSearch(journal.abbreviation);
@@ -94,15 +108,15 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
       if (aliases.some((value) => value.startsWith(term))) return 2;
       return 3;
     };
-    return journals
+    return scopedJournals
       .filter((journal) => normalizeSearch(`${journal.name} ${journal.abbreviation} ${journal.issnPrint ?? ''} ${journal.issnOnline ?? ''} ${(journal.aliases ?? []).join(' ')}`).includes(term))
       .map((journal) => ({ journal, score: score(journal) }))
       .sort((a, b) => a.score - b.score || a.journal.name.localeCompare(b.journal.name, 'en'))
       .map(({ journal }) => journal);
-  }, [journalSearch, journals]);
+  }, [journalSearch, scopedJournals]);
 
-  const favoriteJournals = filteredJournals.filter((journal) => favoriteJournalIds.includes(journal.id));
-  const allOtherJournals = filteredJournals.filter((journal) => !favoriteJournalIds.includes(journal.id));
+  const favoriteJournals = journalScope === 'catalog' ? filteredJournals.filter((journal) => favoriteJournalIds.includes(journal.id)) : [];
+  const allOtherJournals = journalScope === 'catalog' ? filteredJournals.filter((journal) => !favoriteJournalIds.includes(journal.id)) : filteredJournals;
   const otherJournals = allOtherJournals.slice(0, journalLimit);
   const listedJournalIds = [...favoriteJournals, ...otherJournals].map((journal) => journal.id);
   const allListedJournalsSelected = listedJournalIds.length > 0 && listedJournalIds.every((id) => filters.journalIds.includes(id));
@@ -113,10 +127,34 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
 
   const canSearch = Boolean(query);
   const toggleJournal = (id: string) => update('journalIds', filters.journalIds.includes(id) ? filters.journalIds.filter((item) => item !== id) : [...filters.journalIds, id]);
-  const toggleFavorite = (id: string) => {
-    const next = favoriteJournalIds.includes(id) ? favoriteJournalIds.filter((item) => item !== id) : [...favoriteJournalIds, id];
-    setFavoriteJournalIds(next);
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+  const saveFavoriteFolders = (next: JournalFolder[]) => {
+    setFavoriteFolders(next);
+    persistJournalFolders(next);
+  };
+  const setFolderMembership = (folderId: string, journalId: string, included: boolean) => saveFavoriteFolders(setJournalFolderMembership(favoriteFolders, folderId, journalId, included));
+  const saveFolderEditor = () => {
+    if (!folderEditor) return;
+    const name = folderEditor.value.trim();
+    if (!name || favoriteFolders.some((folder) => normalizeSearch(folder.name) === normalizeSearch(name) && (folderEditor.mode === 'create' || folder.id !== journalScope))) return;
+    if (folderEditor.mode === 'create') {
+      const folder: JournalFolder = { id: uid('folder'), name, journalIds: folderEditor.journalId ? [folderEditor.journalId] : [] };
+      saveFavoriteFolders([...favoriteFolders, folder]);
+      setJournalScope(folder.id);
+      setFolderMenuJournalId(null);
+    } else if (activeFolder) {
+      saveFavoriteFolders(favoriteFolders.map((folder) => folder.id === activeFolder.id ? { ...folder, name } : folder));
+    }
+    setFolderEditor(null);
+  };
+  const deleteActiveFolder = () => {
+    if (!activeFolder || activeFolder.id === DEFAULT_FOLDER_ID) return;
+    const fallback = favoriteFolders.find((folder) => folder.id === DEFAULT_FOLDER_ID);
+    const next = favoriteFolders
+      .filter((folder) => folder.id !== activeFolder.id)
+      .map((folder) => folder.id === fallback?.id ? { ...folder, journalIds: [...new Set([...folder.journalIds, ...activeFolder.journalIds])] } : folder);
+    saveFavoriteFolders(next);
+    setJournalScope(DEFAULT_FOLDER_ID);
+    setFolderEditor(null);
   };
   const toggleAllListedJournals = () => {
     const listed = new Set(listedJournalIds);
@@ -124,7 +162,7 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
       ? filters.journalIds.filter((id) => !listed.has(id))
       : [...new Set([...filters.journalIds, ...listedJournalIds])]);
   };
-  const closeJournals = () => { setJournalOpen(false); setJournalSearch(''); };
+  const closeJournals = () => { setJournalOpen(false); setJournalSearch(''); setFolderMenuJournalId(null); setFolderEditor(null); };
 
   const journalRow = (journal: Journal) => <div className={`journal-row ${filters.journalIds.includes(journal.id) ? 'selected' : ''}`} key={journal.id}>
     <label>
@@ -132,7 +170,14 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
       <span className="custom-check">✓</span>
       <span className="journal-copy"><b>{journal.name}</b><small>{journal.abbreviation} · {[journal.issnPrint, journal.issnOnline].filter(Boolean).join(' / ') || 'ISSN não informado'}</small></span>
     </label>
-    <button type="button" className={`journal-star ${favoriteJournalIds.includes(journal.id) ? 'active' : ''}`} aria-pressed={favoriteJournalIds.includes(journal.id)} aria-label={`${favoriteJournalIds.includes(journal.id) ? 'Remover' : 'Adicionar'} ${journal.name} ${favoriteJournalIds.includes(journal.id) ? 'dos' : 'aos'} favoritos`} onClick={() => toggleFavorite(journal.id)}><Icon name="star" /></button>
+    <div className="journal-star-wrap">
+      <button type="button" className={`journal-star ${favoriteJournalIds.includes(journal.id) ? 'active' : ''}`} aria-expanded={folderMenuJournalId === journal.id} aria-label={`Organizar ${journal.name} em pastas`} onClick={() => setFolderMenuJournalId(folderMenuJournalId === journal.id ? null : journal.id)}><Icon name="star" /></button>
+      {folderMenuJournalId === journal.id && <div className="journal-folder-menu" role="group" aria-label={`Pastas de ${journal.name}`}>
+        <strong>Áreas de interesse</strong>
+        {favoriteFolders.map((folder) => <label key={folder.id}><input type="checkbox" checked={folder.journalIds.includes(journal.id)} onChange={(event) => setFolderMembership(folder.id, journal.id, event.target.checked)} /><span>{folder.name}</span><small>{folder.journalIds.length}</small></label>)}
+        <button type="button" onClick={() => setFolderEditor({ mode: 'create', value: '', journalId: journal.id })}><Icon name="plus" /> Nova pasta</button>
+      </div>}
+    </div>
   </div>;
 
   return <section className="builder" aria-labelledby="builder-title">
@@ -197,13 +242,26 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
     {journalOpen && createPortal(<div className="modal-layer notranslate" translate="no" onMouseDown={(event) => { if (event.target === event.currentTarget) closeJournals(); }}>
       <section className="journal-dialog" role="dialog" aria-modal="true" aria-labelledby="journal-dialog-title">
         <div className="dialog-head"><div><h2 id="journal-dialog-title">Revistas</h2><p>Busque por título, abreviação ou ISSN.</p></div><button className="dialog-close" aria-label="Fechar" onClick={closeJournals}><Icon name="close" /></button></div>
-        <div className="dialog-search"><Icon name="search"/><input autoFocus value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Buscar revistas…"/><button disabled={!listedJournalIds.length} aria-pressed={allListedJournalsSelected} title="Aplica às revistas exibidas na lista" onClick={toggleAllListedJournals}>{allListedJournalsSelected ? 'Desmarcar todas' : 'Selecionar todas'}</button><button disabled={!favoriteJournalIds.length} onClick={() => update('journalIds', favoriteJournalIds)}>Selecionar favoritas</button><button onClick={() => update('journalIds', [])}>Limpar</button></div>
-        <div className="dialog-status"><span><b>{filters.journalIds.length}</b> selecionadas</span><span>{filteredJournals.length.toLocaleString('pt-BR')} encontradas · <Icon name="star"/> {favoriteJournalIds.length} favoritas</span></div>
-        <div className="journal-list">
-          {favoriteJournals.length > 0 && <><div className="journal-section-label"><span>Favoritas</span></div>{favoriteJournals.map(journalRow)}{otherJournals.length > 0 && <div className="journal-divider" />}</>}
-          {otherJournals.map(journalRow)}
-          {!filteredJournals.length && <div className="journal-empty">Nenhuma revista encontrada.</div>}
-          {allOtherJournals.length > otherJournals.length && <button className="journal-more" onClick={() => setJournalLimit((current) => current + JOURNAL_PAGE_SIZE)}>Mostrar mais {Math.min(JOURNAL_PAGE_SIZE, allOtherJournals.length - otherJournals.length).toLocaleString('pt-BR')}</button>}
+        <div className="journal-workspace">
+          <aside className="journal-folders" aria-label="Áreas de interesse">
+            <div className="folder-heading"><span>Áreas de interesse</span><button aria-label="Criar pasta" title="Criar pasta" onClick={() => setFolderEditor({ mode: 'create', value: '' })}><Icon name="plus"/></button></div>
+            <div className="folder-list">
+              <button className={journalScope === 'catalog' ? 'active' : ''} onClick={() => { setJournalScope('catalog'); setFolderMenuJournalId(null); }}><Icon name="journal"/><span><b>Catálogo</b><small>{journals.length.toLocaleString('pt-BR')}</small></span></button>
+              <button className={journalScope === 'favorites' ? 'active' : ''} onClick={() => { setJournalScope('favorites'); setFolderMenuJournalId(null); }}><Icon name="star"/><span><b>Todos os favoritos</b><small>{favoriteJournalIds.length.toLocaleString('pt-BR')}</small></span></button>
+              {favoriteFolders.map((folder) => <div className="folder-entry" key={folder.id}><button className={journalScope === folder.id ? 'active' : ''} onClick={() => { setJournalScope(folder.id); setFolderMenuJournalId(null); }}><Icon name="folder"/><span><b>{folder.name}</b><small>{folder.journalIds.length.toLocaleString('pt-BR')}</small></span></button>{journalScope === folder.id && <div className="folder-actions"><button aria-label={`Renomear ${folder.name}`} title="Renomear" onClick={() => setFolderEditor({ mode: 'rename', value: folder.name })}><Icon name="edit"/></button>{folder.id !== DEFAULT_FOLDER_ID && <button aria-label={`Excluir ${folder.name}`} title="Excluir" onClick={() => { if (window.confirm(`Excluir a pasta “${folder.name}”? As revistas serão movidas para Favoritas.`)) deleteActiveFolder(); }}><Icon name="trash"/></button>}</div>}</div>)}
+            </div>
+            {folderEditor && <form className="folder-editor" onSubmit={(event) => { event.preventDefault(); saveFolderEditor(); }}><label>{folderEditor.mode === 'create' ? 'Nova pasta' : 'Renomear pasta'}<input autoFocus aria-label="Nome da pasta" value={folderEditor.value} onChange={(event) => setFolderEditor({ ...folderEditor, value: event.target.value })} placeholder="Ex.: Neurorradiologia"/></label><div><button type="button" onClick={() => setFolderEditor(null)}>Cancelar</button><button type="submit" disabled={!folderEditor.value.trim()}>Salvar</button></div></form>}
+          </aside>
+          <div className="journal-browser">
+            <div className="dialog-search"><Icon name="search"/><input autoFocus={!folderEditor} value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Buscar revistas…"/><button disabled={!listedJournalIds.length} aria-pressed={allListedJournalsSelected} title="Aplica às revistas exibidas na lista" onClick={toggleAllListedJournals}>{allListedJournalsSelected ? 'Desmarcar todas' : 'Selecionar todas'}</button><button disabled={!(activeFolder?.journalIds.length || favoriteJournalIds.length)} onClick={() => update('journalIds', activeFolder?.journalIds ?? favoriteJournalIds)}>{activeFolder ? 'Selecionar pasta' : 'Selecionar favoritas'}</button><button onClick={() => update('journalIds', [])}>Limpar</button></div>
+            <div className="dialog-status"><span><b>{filters.journalIds.length}</b> selecionadas</span><span>{filteredJournals.length.toLocaleString('pt-BR')} encontradas · <Icon name="star"/> {favoriteJournalIds.length} favoritas</span></div>
+            <div className="journal-list">
+              {favoriteJournals.length > 0 && <><div className="journal-section-label"><span>Favoritas</span></div>{favoriteJournals.map(journalRow)}{otherJournals.length > 0 && <div className="journal-divider" />}</>}
+              {otherJournals.map(journalRow)}
+              {!filteredJournals.length && <div className="journal-empty">{journalScope === 'catalog' ? 'Nenhuma revista encontrada.' : 'Nenhuma revista nesta área.'}</div>}
+              {allOtherJournals.length > otherJournals.length && <button className="journal-more" onClick={() => setJournalLimit((current) => current + JOURNAL_PAGE_SIZE)}>Mostrar mais {Math.min(JOURNAL_PAGE_SIZE, allOtherJournals.length - otherJournals.length).toLocaleString('pt-BR')}</button>}
+            </div>
+          </div>
         </div>
         <div className="dialog-footer"><span>{journals.length.toLocaleString('pt-BR')} títulos do catálogo PubMed/NLM</span><button className="button primary" onClick={closeJournals}>Concluir</button></div>
       </section>
