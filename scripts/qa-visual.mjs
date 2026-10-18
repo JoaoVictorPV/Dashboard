@@ -35,15 +35,7 @@ try {
 
   await desktop.getByLabel('Palavras-chave').fill('"deep learning"; |radiomics; -editorial');
   await desktop.getByLabel('Adicionar termo').click();
-  const editorialNotices = desktop.getByRole('checkbox', { name: /Ocultar avisos explícitos/ });
-  const editorialNoticesControl = desktop.locator('label.switch-control').filter({ hasText: 'Ocultar avisos explícitos' });
-  report.desktop.editorialFilterOffByDefault = !(await editorialNotices.isChecked());
-  await editorialNoticesControl.click();
-  await desktop.getByRole('button', { name: /Ver consulta/ }).click();
-  const strictQuery = await desktop.locator('.query-preview code').innerText();
-  report.desktop.editorialFilterStrict = strictQuery.includes('[pt:noexp]') && strictQuery.includes('correction[Title]') && strictQuery.includes('"expression of concern"[Title]');
-  await editorialNoticesControl.click();
-  await desktop.getByRole('button', { name: /Ver consulta/ }).click();
+  report.desktop.hasNoEditorialFilter = await desktop.getByRole('checkbox', { name: /Ocultar avisos|Ocultar correções/ }).count() === 0;
   await desktop.getByRole('button', { name: /Todas as revistas/ }).click();
   const dialog = desktop.getByRole('dialog', { name: /Revistas/ });
   await dialog.getByPlaceholder(/Buscar revistas/).fill('Radiology');
@@ -109,7 +101,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.mobile.modalScrollWidth > report.mobile.width || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.editorialFilterOffByDefault || !report.desktop.editorialFilterStrict || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
+if (overflow || report.mobile.modalScrollWidth > report.mobile.width || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.hasNoEditorialFilter || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {

@@ -34,7 +34,6 @@ export interface SearchFilters {
   dateTo: string;
   datePreset: DatePreset | null;
   freeFullText: boolean;
-  excludeCorrections: boolean;
   sort: SortMode;
 }
 

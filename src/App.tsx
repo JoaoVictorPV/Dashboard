@@ -13,9 +13,11 @@ import type { DatePreset, Journal, PubMedArticle, SavedSearch, SearchFilters, Se
 const previewMode = import.meta.env.DEV && new URLSearchParams(location.search).has('preview');
 const SAVED_KEY = 'atlas-medico-saved-searches-v2';
 const datePresets = new Set<DatePreset>(['30d', '90d', '6m', '1y', '2y', '5y']);
+type StoredSearchFilters = Partial<SearchFilters> & { excludeCorrections?: boolean };
 
-function normalizeFilters(value: Partial<SearchFilters> | null | undefined): SearchFilters {
-  const filters = { ...emptyFilters(), ...value };
+function normalizeFilters(value: StoredSearchFilters | null | undefined): SearchFilters {
+  const { excludeCorrections: _discardedLegacyFilter, ...compatible } = value ?? {};
+  const filters = { ...emptyFilters(), ...compatible };
   filters.datePreset = datePresets.has(filters.datePreset as DatePreset) ? filters.datePreset as DatePreset : null;
   return filters;
 }
