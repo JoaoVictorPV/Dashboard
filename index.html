@@ -1,111 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-key="welcome_title">Dashboard de Revistas Médicas - Bem-vindo</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header class="main-header">
-        <div class="header-content">
-            <div class="header-branding">
-                <img src="./logo.png" alt="Logo" class="header-logo">
-                <h1 class="header-title" data-key="header_title_main">Dashboard de Revistas Médicas</h1>
-            </div>
-            <div class="lang-selector">
-                <a href="index.html"><img src="https://flagsapi.com/BR/shiny/24.png" alt="Português" class="lang-flag"></a>
-                <a href="index_en.html"><img src="https://flagsapi.com/US/shiny/24.png" alt="English" class="lang-flag"></a>
-            </div>
-        </div>
-    </header>
-
-    <main class="container">
-        <section class="hero">
-            <h2 data-key="hero_h2">Acesso Inteligente à Literatura Médica</h2>
-            <p data-key="hero_p">Uma plataforma inovadora para pesquisar, analisar e se manter atualizado com as publicações científicas mais relevantes da sua área.</p>
-            <a href="login.html" class="btn btn-primary" data-key="access_platform">Acessar Plataforma</a>
-        </section>
-
-        <section class="features">
-            <h3 data-key="features">Funcionalidades</h3>
-            <div class="feature-list">
-                <div class="feature-item">
-                    <h4 data-key="feature_advanced_search">Busca Avançada</h4>
-                    <p data-key="feature_advanced_search_p">Filtros poderosos para encontrar exatamente o que você precisa.</p>
-                </div>
-                <div class="feature-item">
-                    <h4 data-key="feature_interactive_dashboard">Dashboard Interativo</h4>
-                    <p data-key="feature_interactive_dashboard_p">Visualize e organize os resultados de forma clara e eficiente.</p>
-                </div>
-                <div class="feature-item">
-                    <h4 data-key="feature_exclusive_content">Conteúdo Exclusivo</h4>
-                    <p data-key="feature_exclusive_content_p">Aulas e análises aprofundadas disponíveis para assinantes.</p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="main-footer-credits">
-        <p>
-            <span class="footer-icon">🔬</span><span data-key="footer_credits">Website desenvolvido pelo médico radiologista João Victor Pruner Vieira (CRM/PR 30289). Todos os direitos reservados.</span>
-            <span class="email-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-            </span>
-        </p>
-    </footer>
-
-    <!-- Formulário de Contato Pop-up -->
-    <div id="contact-popup">
-        <div class="popup-header">
-            <h3>Contato</h3>
-            <button class="close-popup">&times;</button>
-        </div>
-        <form class="popup-form" action="https://formspree.io/f/mgvnonzo" method="POST">
-            <div class="form-group">
-                <label for="name">Nome</label>
-                <input type="text" id="name" name="name" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="subject">Título</label>
-                <input type="text" id="subject" name="subject" required>
-            </div>
-            <div class="form-group">
-                <label for="message">Comentários</label>
-                <textarea id="message" name="message" required></textarea>
-            </div>
-            <button type="submit">Enviar</button>
-        </form>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const emailIcon = document.querySelector('.email-icon');
-            const contactPopup = document.getElementById('contact-popup');
-            const closePopupButton = document.querySelector('.close-popup');
-
-            if (emailIcon && contactPopup && closePopupButton) {
-                emailIcon.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                    contactPopup.classList.add('show');
-                });
-
-                closePopupButton.addEventListener('click', function() {
-                    contactPopup.classList.remove('show');
-                });
-
-                // Fecha o pop-up se clicar fora dele
-                document.addEventListener('click', function(event) {
-                    if (contactPopup.classList.contains('show') && !contactPopup.contains(event.target) && !emailIcon.contains(event.target)) {
-                        contactPopup.classList.remove('show');
-                    }
-                });
-            }
-        });
-    </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#071615" />
+    <meta name="description" content="Pesquisa clínica avançada no PubMed, com curadoria de revistas e exportação HTML interativa." />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Atlas Médico · Pesquisa PubMed</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

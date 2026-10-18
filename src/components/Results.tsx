@@ -1,0 +1,91 @@
+import { useMemo, useState } from 'react';
+import { fetchAbstract } from '../lib/api';
+import { downloadResultsHtml } from '../lib/exportHtml';
+import type { PubMedArticle, SearchResponse, SortMode } from '../types';
+import { Icon } from './Icon';
+
+type Column = 'title' | 'authors' | 'journal' | 'publicationDate' | 'pmid';
+type Direction = 'asc' | 'desc';
+
+interface Props {
+  result: SearchResponse;
+  sortMode: SortMode;
+  onSortMode: (sort: SortMode) => void;
+  onPage: (page: number) => void;
+  onArticleUpdate: (article: PubMedArticle) => void;
+}
+
+const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+
+export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate }: Props) {
+  const [sort, setSort] = useState<{ column: Column; direction: Direction }>({ column: 'publicationDate', direction: 'desc' });
+  const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>('normal');
+  const [columns, setColumns] = useState<Column[]>(['title', 'authors', 'journal', 'publicationDate', 'pmid']);
+  const [openAbstracts, setOpenAbstracts] = useState<string[]>([]);
+  const [loadingAbstracts, setLoadingAbstracts] = useState<string[]>([]);
+  const [columnMenu, setColumnMenu] = useState(false);
+
+  const articles = useMemo(() => result.articles.map((article, index) => ({ article, index })).sort((a, b) => {
+    const left = a.article[sort.column];
+    const right = b.article[sort.column];
+    const aValue = Array.isArray(left) ? left.join(' ') : String(left ?? '');
+    const bValue = Array.isArray(right) ? right.join(' ') : String(right ?? '');
+    const compared = collator.compare(aValue, bValue);
+    return (sort.direction === 'asc' ? compared : -compared) || a.index - b.index;
+  }).map(({ article }) => article), [result.articles, sort]);
+
+  const changeSort = (column: Column) => setSort((current) => ({ column, direction: current.column === column && current.direction === 'asc' ? 'desc' : 'asc' }));
+  const ariaSort = (column: Column) => sort.column === column ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+  const toggleColumn = (column: Column) => setColumns((current) => current.includes(column) ? current.filter((item) => item !== column) : [...current, column]);
+  const toggleAbstract = async (article: PubMedArticle) => {
+    if (openAbstracts.includes(article.pmid)) { setOpenAbstracts((current) => current.filter((id) => id !== article.pmid)); return; }
+    setOpenAbstracts((current) => [...current, article.pmid]);
+    if (article.abstract || !article.hasAbstract) return;
+    setLoadingAbstracts((current) => [...current, article.pmid]);
+    try {
+      const details = await fetchAbstract(article.pmid);
+      onArticleUpdate({ ...article, abstract: details.abstract || 'O PubMed não forneceu um resumo para este registro.' });
+    } catch {
+      onArticleUpdate({ ...article, abstract: 'Não foi possível carregar o resumo agora.' });
+    } finally {
+      setLoadingAbstracts((current) => current.filter((id) => id !== article.pmid));
+    }
+  };
+
+  const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
+  const first = (result.page - 1) * result.pageSize + 1;
+  const last = Math.min(result.page * result.pageSize, result.total);
+
+  return <section className="results" aria-labelledby="results-title">
+    <div className="results-heading">
+      <div><span className="eyebrow">Resultado vivo</span><h2 id="results-title">{result.total.toLocaleString('pt-BR')} artigos encontrados</h2><p>Exibindo {first.toLocaleString('pt-BR')}–{last.toLocaleString('pt-BR')} · página {result.page} de {totalPages.toLocaleString('pt-BR')}</p></div>
+      <div className="results-actions"><button className="button secondary" onClick={() => downloadResultsHtml(articles, result.query)}><Icon name="download"/> Exportar HTML ajustável</button></div>
+    </div>
+
+    <div className="table-toolbar">
+      <div className="segmented" aria-label="Ordem global"><button className={sortMode === 'newest' ? 'active' : ''} onClick={() => onSortMode('newest')}>Mais recentes</button><button className={sortMode === 'relevance' ? 'active' : ''} onClick={() => onSortMode('relevance')}>Mais relevantes</button></div>
+      <div className="toolbar-spacer" />
+      <label className="toolbar-select">Densidade<select value={density} onChange={(event) => setDensity(event.target.value as typeof density)}><option value="compact">Compacta</option><option value="normal">Padrão</option><option value="comfortable">Confortável</option></select></label>
+      <div className="column-control"><button className="button ghost" onClick={() => setColumnMenu(!columnMenu)}><Icon name="columns"/> Colunas</button>{columnMenu && <div className="column-menu">{(['title', 'authors', 'journal', 'publicationDate', 'pmid'] as Column[]).map((column) => <label key={column}><input type="checkbox" checked={columns.includes(column)} onChange={() => toggleColumn(column)} />{{ title: 'Título', authors: 'Autores', journal: 'Revista', publicationDate: 'Data', pmid: 'Identificadores' }[column]}</label>)}</div>}</div>
+      <button className="button ghost" onClick={() => setOpenAbstracts(openAbstracts.length ? [] : articles.filter((article) => article.hasAbstract).map((article) => article.pmid))}>{openAbstracts.length ? 'Recolher resumos' : 'Abrir resumos'}</button>
+    </div>
+
+    <div className={`results-table-wrap density-${density}`}>
+      <table className="results-table"><thead><tr>
+        {columns.includes('title') && <th aria-sort={ariaSort('title')}><button onClick={() => changeSort('title')}>Artigo <span>↕</span></button></th>}
+        {columns.includes('authors') && <th aria-sort={ariaSort('authors')}><button onClick={() => changeSort('authors')}>Autores <span>↕</span></button></th>}
+        {columns.includes('journal') && <th aria-sort={ariaSort('journal')}><button onClick={() => changeSort('journal')}>Revista <span>↕</span></button></th>}
+        {columns.includes('publicationDate') && <th aria-sort={ariaSort('publicationDate')}><button onClick={() => changeSort('publicationDate')}>Publicação <span>↕</span></button></th>}
+        {columns.includes('pmid') && <th aria-sort={ariaSort('pmid')}><button onClick={() => changeSort('pmid')}>Acesso <span>↕</span></button></th>}
+      </tr></thead><tbody>{articles.map((article) => <tr key={article.pmid}>
+        {columns.includes('title') && <td data-label="Artigo" className="title-cell"><div className="result-badges">{article.pmcId && <span className="badge open">Texto gratuito</span>}{article.hasAbstract && <span className="badge">Com resumo</span>}</div><a href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer">{article.title}<Icon name="external"/></a>{article.hasAbstract && <><button className="abstract-toggle" onClick={() => toggleAbstract(article)}>{openAbstracts.includes(article.pmid) ? 'Ocultar resumo' : 'Ler resumo'}</button>{openAbstracts.includes(article.pmid) && <div className="abstract-panel">{loadingAbstracts.includes(article.pmid) ? <span className="loading-line">Carregando resumo…</span> : (article.abstract ?? 'Use “Ler resumo” para carregar o texto.')}</div>}</>}</td>}
+        {columns.includes('authors') && <td data-label="Autores"><span className="authors-text">{article.authors.slice(0, 3).join(', ') || '—'}{article.authors.length > 3 && <small> +{article.authors.length - 3}</small>}</span></td>}
+        {columns.includes('journal') && <td data-label="Revista"><b className="journal-name">{article.journal}</b><small>{article.journalAbbreviation}</small></td>}
+        {columns.includes('publicationDate') && <td data-label="Publicação"><time>{article.publicationDate || '—'}</time></td>}
+        {columns.includes('pmid') && <td data-label="Acesso"><a className="id-link" href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer">PMID {article.pmid}</a>{article.doi && <a className="id-link subtle" href={`https://doi.org/${article.doi}`} target="_blank" rel="noreferrer">DOI</a>}</td>}
+      </tr>)}</tbody></table>
+    </div>
+
+    <nav className="pagination" aria-label="Paginação"><button disabled={result.page <= 1} onClick={() => onPage(result.page - 1)}>← Anterior</button><span>Página <b>{result.page}</b> de {totalPages.toLocaleString('pt-BR')}</span><button disabled={result.page >= totalPages} onClick={() => onPage(result.page + 1)}>Próxima →</button></nav>
+  </section>;
+}
