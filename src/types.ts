@@ -37,6 +37,7 @@ export interface SearchFilters {
 export interface PubMedArticle {
   pmid: string;
   title: string;
+  translatedTitle?: string;
   journal: string;
   journalAbbreviation: string;
   authors: string[];
