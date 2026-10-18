@@ -26,12 +26,20 @@ describe('construtor PubMed', () => {
     expect(query).toContain('"Radiology"[Journal]');
     expect(query).toContain('"2024/01/01"[Date - Publication] : "2025/12/31"[Date - Publication]');
     expect(query).toContain('"free full text"[sb]');
-    expect(query).toContain('NOT ("Published Erratum"[Publication Type]');
+    expect(query).toContain('"Published Erratum"[pt:noexp] AND (erratum[Title] OR corrigendum[Title] OR correction[Title])');
+    expect(query).toContain('"Expression of Concern"[pt:noexp] AND "expression of concern"[Title]');
   });
 
   it('permite incluir avisos editoriais quando solicitado', () => {
     const query = buildPubMedQuery({ keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }], authors: [], journalIds: [], dateFrom: '', dateTo: '', datePreset: null, freeFullText: false, excludeCorrections: false, sort: 'newest' }, journals);
     expect(query).not.toContain('Published Erratum');
+  });
+
+  it('não oculta artigos apenas por uma classificação editorial ampla', () => {
+    const query = buildPubMedQuery({ keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }], authors: [], journalIds: [], dateFrom: '', dateTo: '', datePreset: null, freeFullText: false, excludeCorrections: true, sort: 'newest' }, journals);
+    expect(query).not.toContain('"Published Erratum"[Publication Type] OR');
+    expect(query).toContain('correction[Title]');
+    expect(query).toContain('[pt:noexp]');
   });
 
   it('recalcula intervalos móveis ao executar uma busca salva', () => {
