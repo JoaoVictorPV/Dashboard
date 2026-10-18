@@ -8,7 +8,6 @@ Buscador pessoal de literatura médica no PubMed. A versão 2 substitui o antigo
 - múltiplos autores e catálogo completo de revistas citadas no PubMed, com busca por nome, abreviação, ISSN ou organização conhecida;
 - datas livres e atalhos de 30 dias, 6 meses, 1 ano e 5 anos;
 - filtro de texto completo gratuito disponível agora;
-- exclusão opcional e estrita de avisos editoriais, exigindo tipo PubMed exato e título explícito de correção, retratação ou manifestação de preocupação;
 - paginação real e ordenação global no PubMed;
 - ordenação local por qualquer coluna, densidade e colunas ajustáveis;
 - resumo sob demanda e abertura de todos os resumos da página;

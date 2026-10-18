@@ -18,7 +18,7 @@ describe('construtor PubMed', () => {
     const filters: SearchFilters = {
       keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }],
       authors: [{ id: 'b', value: 'Silva AJ', operator: 'AND' }],
-      journalIds: ['1'], dateFrom: '2024-01-01', dateTo: '2025-12-31', datePreset: null, freeFullText: true, excludeCorrections: true, sort: 'newest',
+      journalIds: ['1'], dateFrom: '2024-01-01', dateTo: '2025-12-31', datePreset: null, freeFullText: true, sort: 'newest',
     };
     const query = buildPubMedQuery(filters, journals);
     expect(query).toContain('MRI[Title]');
@@ -26,26 +26,23 @@ describe('construtor PubMed', () => {
     expect(query).toContain('"Radiology"[Journal]');
     expect(query).toContain('"2024/01/01"[Date - Publication] : "2025/12/31"[Date - Publication]');
     expect(query).toContain('"free full text"[sb]');
-    expect(query).toContain('"Published Erratum"[pt:noexp] AND (erratum[Title] OR corrigendum[Title] OR correction[Title])');
-    expect(query).toContain('"Expression of Concern"[pt:noexp] AND "expression of concern"[Title]');
   });
 
-  it('permite incluir avisos editoriais quando solicitado', () => {
-    const query = buildPubMedQuery({ keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }], authors: [], journalIds: [], dateFrom: '', dateTo: '', datePreset: null, freeFullText: false, excludeCorrections: false, sort: 'newest' }, journals);
-    expect(query).not.toContain('Published Erratum');
-  });
-
-  it('não oculta artigos apenas por uma classificação editorial ampla', () => {
-    const query = buildPubMedQuery({ keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }], authors: [], journalIds: [], dateFrom: '', dateTo: '', datePreset: null, freeFullText: false, excludeCorrections: true, sort: 'newest' }, journals);
-    expect(query).not.toContain('"Published Erratum"[Publication Type] OR');
-    expect(query).toContain('correction[Title]');
-    expect(query).toContain('[pt:noexp]');
+  it('ignora o filtro editorial legado de buscas salvas antigas', () => {
+    const legacyFilters = {
+      keywords: [{ id: 'a', value: 'MRI', operator: 'AND' as const, field: 'title' as const, phrase: false }],
+      authors: [], journalIds: [], dateFrom: '', dateTo: '', datePreset: null, freeFullText: false, sort: 'newest' as const, excludeCorrections: true,
+    };
+    const query = buildPubMedQuery(legacyFilters, journals);
+    expect(query).toBe('(MRI[Title])');
+    expect(query).not.toContain('Erratum');
+    expect(query).not.toContain('NOT');
   });
 
   it('recalcula intervalos móveis ao executar uma busca salva', () => {
     const filters: SearchFilters = {
       keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }],
-      authors: [], journalIds: [], dateFrom: '2020-01-01', dateTo: '2020-01-31', datePreset: '30d', freeFullText: false, excludeCorrections: false, sort: 'newest',
+      authors: [], journalIds: [], dateFrom: '2020-01-01', dateTo: '2020-01-31', datePreset: '30d', freeFullText: false, sort: 'newest',
     };
     const query = buildPubMedQuery(filters, journals, new Date('2026-10-18T12:00:00'));
     expect(query).toContain('"2026/09/18"[Date - Publication] : "2026/10/18"[Date - Publication]');
