@@ -105,6 +105,10 @@ export function buildPubMedQuery(filters: SearchFilters, journals: Journal[], no
   return clauses.join(' AND ');
 }
 
+export function hasFreeFullTextFilter(query: string) {
+  return /["']?free\s+full\s+text["']?\s*\[(?:sb|filter)\]/i.test(query);
+}
+
 export const emptyFilters = (): SearchFilters => ({
   keywords: [],
   authors: [],

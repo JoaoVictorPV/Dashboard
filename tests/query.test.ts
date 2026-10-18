@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPubMedQuery, emptyFilters, keywordExpression, relativeDateRange } from '../src/lib/query';
+import { buildPubMedQuery, emptyFilters, hasFreeFullTextFilter, keywordExpression, relativeDateRange } from '../src/lib/query';
 import type { Journal, SearchFilters } from '../src/types';
 
 const journals: Journal[] = [{ id: '1', name: 'Radiology', abbreviation: 'Radiology', issnPrint: '0033-8419', issnOnline: null }];
@@ -30,6 +30,9 @@ describe('construtor PubMed', () => {
     expect(query).toContain('"Radiology"[Journal]');
     expect(query).toContain('"2024/01/01"[Date - Publication] : "2025/12/31"[Date - Publication]');
     expect(query).toContain('"free full text"[sb]');
+    expect(hasFreeFullTextFilter(query)).toBe(true);
+    expect(hasFreeFullTextFilter('MRI[Title]')).toBe(false);
+    expect(hasFreeFullTextFilter('free full text[Filter]')).toBe(true);
   });
 
   it('ignora o filtro editorial legado de buscas salvas antigas', () => {
