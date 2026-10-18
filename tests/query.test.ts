@@ -18,7 +18,7 @@ describe('construtor PubMed', () => {
     const filters: SearchFilters = {
       keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }],
       authors: [{ id: 'b', value: 'Silva AJ', operator: 'AND' }],
-      journalIds: ['1'], dateFrom: '2024-01-01', dateTo: '2025-12-31', freeFullText: true, sort: 'newest',
+      journalIds: ['1'], dateFrom: '2024-01-01', dateTo: '2025-12-31', freeFullText: true, excludeCorrections: true, sort: 'newest',
     };
     const query = buildPubMedQuery(filters, journals);
     expect(query).toContain('MRI[Title]');
@@ -26,5 +26,11 @@ describe('construtor PubMed', () => {
     expect(query).toContain('"Radiology"[Journal]');
     expect(query).toContain('"2024/01/01"[Date - Publication] : "2025/12/31"[Date - Publication]');
     expect(query).toContain('"free full text"[sb]');
+    expect(query).toContain('NOT ("Published Erratum"[Publication Type]');
+  });
+
+  it('permite incluir avisos editoriais quando solicitado', () => {
+    const query = buildPubMedQuery({ keywords: [{ id: 'a', value: 'MRI', operator: 'AND', field: 'title', phrase: false }], authors: [], journalIds: [], dateFrom: '', dateTo: '', freeFullText: false, excludeCorrections: false, sort: 'newest' }, journals);
+    expect(query).not.toContain('Published Erratum');
   });
 });

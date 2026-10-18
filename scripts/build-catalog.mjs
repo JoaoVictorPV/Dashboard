@@ -43,10 +43,8 @@ for (const record of records) {
   byTitle.set(normalize(record.JournalTitle), record);
 }
 
-const catalog = [];
+const curatedByNlmId = new Map();
 const unmatched = [];
-const seen = new Set();
-
 for (const entry of seed) {
   const abbreviation = aliases.get(normalize(entry.abbr)) ?? normalize(entry.abbr);
   const record = byAbbreviation.get(abbreviation) ?? byTitle.get(normalize(entry.name.replace(/\s*\([^)]*\)\s*/g, ' ')));
@@ -54,16 +52,36 @@ for (const entry of seed) {
     unmatched.push(entry);
     continue;
   }
-  if (seen.has(record.NlmId)) continue;
-  seen.add(record.NlmId);
-  catalog.push({
-    id: record.NlmId,
-    name: record.JournalTitle,
-    abbreviation: record.MedAbbr || record.IsoAbbr,
-    issnPrint: record['ISSN (Print)'] || null,
-    issnOnline: record['ISSN (Online)'] || null,
-  });
+  const values = curatedByNlmId.get(record.NlmId) ?? [];
+  values.push(entry.name, entry.abbr);
+  curatedByNlmId.set(record.NlmId, values);
 }
+
+const organizationAliases = new Map(Object.entries({
+  Radiology: ['RSNA', 'Radiological Society of North America'],
+  Radiographics: ['RSNA', 'Radiological Society of North America'],
+  JAMA: ['Journal of the American Medical Association', 'American Medical Association'],
+  'JAMA Intern Med': ['JAMA Internal Medicine', 'American Medical Association'],
+  'N Engl J Med': ['NEJM'],
+  BMJ: ['British Medical Journal'],
+  'AJR Am J Roentgenol': ['AJR', 'American Roentgen Ray Society'],
+}));
+
+const catalog = records
+  .filter((record) => record.JournalTitle && (record.MedAbbr || record.IsoAbbr))
+  .map((record) => {
+    const abbreviation = record.MedAbbr || record.IsoAbbr;
+    const aliasValues = [...(curatedByNlmId.get(record.NlmId) ?? []), ...(organizationAliases.get(abbreviation) ?? [])]
+      .filter((value) => value && normalize(value) !== normalize(record.JournalTitle) && normalize(value) !== normalize(abbreviation));
+    return {
+      id: record.NlmId,
+      name: record.JournalTitle.replace(/\.$/, ''),
+      abbreviation,
+      issnPrint: record['ISSN (Print)'] || null,
+      issnOnline: record['ISSN (Online)'] || null,
+      ...(aliasValues.length ? { aliases: [...new Set(aliasValues)] } : {}),
+    };
+  });
 
 catalog.sort((a, b) => a.name.localeCompare(b.name, 'en'));
 const output = `// Gerado a partir do catálogo oficial NLM J_Entrez. Não editar manualmente.\n` +
@@ -72,4 +90,4 @@ const output = `// Gerado a partir do catálogo oficial NLM J_Entrez. Não edita
 
 await writeFile(resolve('src/data/journals.generated.ts'), output, 'utf8');
 await writeFile(resolve('data/unmatched-journals.json'), `${JSON.stringify(unmatched, null, 2)}\n`, 'utf8');
-console.log(`Catálogo: ${catalog.length} revistas validadas; ${unmatched.length} entradas não encontradas.`);
+console.log(`Catálogo completo: ${catalog.length} revistas citadas no PubMed; ${unmatched.length} entradas históricas sem associação.`);

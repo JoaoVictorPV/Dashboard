@@ -8,6 +8,7 @@ export interface Journal {
   abbreviation: string;
   issnPrint: string | null;
   issnOnline: string | null;
+  aliases?: string[];
 }
 
 export interface KeywordTerm {
@@ -31,6 +32,7 @@ export interface SearchFilters {
   dateFrom: string;
   dateTo: string;
   freeFullText: boolean;
+  excludeCorrections: boolean;
   sort: SortMode;
 }
 

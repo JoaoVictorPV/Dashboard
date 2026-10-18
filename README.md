@@ -5,9 +5,10 @@ Buscador pessoal de literatura médica no PubMed. A versão 2 substitui o antigo
 ## Recursos
 
 - termos em formato de tags com `AND`, `OR`, `NOT`, frase exata e campo PubMed;
-- múltiplos autores e revistas, com busca por nome, abreviação ou ISSN;
+- múltiplos autores e catálogo completo de revistas citadas no PubMed, com busca por nome, abreviação, ISSN ou organização conhecida;
 - datas livres e atalhos de 30 dias, 6 meses, 1 ano e 5 anos;
 - filtro de texto completo gratuito disponível agora;
+- exclusão padrão de erratas, avisos de retratação e expressões de preocupação, com controle para reativá-los;
 - paginação real e ordenação global no PubMed;
 - ordenação local por qualquer coluna, densidade e colunas ajustáveis;
 - resumo sob demanda e abertura de todos os resumos da página;
@@ -52,13 +53,13 @@ O comando oculta a digitação e imprime somente o hash. Quando `ADMIN_PASSWORD_
 
 ## Catálogo de revistas
 
-`data/journal-seed.json` guarda a curadoria histórica. O arquivo `src/data/journals.generated.ts` é gerado a partir do catálogo oficial `J_Entrez` da National Library of Medicine:
+`data/journal-seed.json` guarda nomes e aliases da curadoria histórica. O arquivo `src/data/journals.generated.ts` contém o catálogo completo `J_Entrez` da National Library of Medicine, atualizado diariamente e com todos os títulos citados no PubMed:
 
 ```bash
 npm run catalog:build
 ```
 
-Itens que não puderem ser associados de forma segura aparecem em `data/unmatched-journals.json` e não entram automaticamente na busca. Isso evita publicar ISSNs incorretos.
+Itens históricos que não puderem ser associados aparecem em `data/unmatched-journals.json`; isso não limita o catálogo oficial completo, apenas os aliases adicionais.
 
 ## Verificação
 

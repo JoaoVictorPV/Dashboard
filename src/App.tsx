@@ -6,9 +6,9 @@ import { Results } from './components/Results';
 import { Icon } from './components/Icon';
 import { authApi, searchPubMed } from './lib/api';
 import { buildPubMedQuery, emptyFilters, uid } from './lib/query';
+import { loadJournalCatalog } from './lib/catalog';
 import { mockSearch } from './data/mock';
-import { journals } from './data/journals.generated';
-import type { PubMedArticle, SavedSearch, SearchFilters, SearchResponse, SortMode } from './types';
+import type { Journal, PubMedArticle, SavedSearch, SearchFilters, SearchResponse, SortMode } from './types';
 
 const previewMode = import.meta.env.DEV && new URLSearchParams(location.search).has('preview');
 const SAVED_KEY = 'atlas-medico-saved-searches-v2';
@@ -28,6 +28,7 @@ export default function App() {
   const [savedOpen, setSavedOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
+  const [journals, setJournals] = useState<Journal[]>([]);
   const lastActivity = useRef(Date.now());
   const lastRefresh = useRef(Date.now());
   const query = useMemo(() => buildPubMedQuery(filters, journals), [filters]);
@@ -36,6 +37,13 @@ export default function App() {
     if (previewMode) return;
     authApi.session().then((session) => setAuth(session.authenticated ? 'in' : 'out')).catch(() => setAuth('out'));
   }, []);
+
+  useEffect(() => {
+    if (auth !== 'in') return;
+    let active = true;
+    loadJournalCatalog().then((catalog) => { if (active) setJournals(catalog); }).catch(() => setError('Não foi possível carregar o catálogo de revistas.'));
+    return () => { active = false; };
+  }, [auth]);
 
   useEffect(() => {
     if (auth !== 'in' || previewMode) return;
@@ -83,8 +91,8 @@ export default function App() {
     <header className="topbar"><a className="brand" href="#top"><span className="brand-mark"><Icon name="sparkle"/></span><span><b>ATLAS</b><small>MÉDICO</small></span></a><nav><span className="source-status"><i/> PubMed conectado</span><button onClick={() => setSavedOpen(!savedOpen)}><Icon name="bookmark"/> Buscas salvas <em>{saved.length}</em></button><button aria-label="Sair" title="Encerrar sessão" onClick={logout}><Icon name="logout"/></button></nav></header>
     {savedOpen && <aside className="saved-drawer"><div><span className="eyebrow">Sua biblioteca</span><button aria-label="Fechar" onClick={() => setSavedOpen(false)}><Icon name="close"/></button></div><h2>Buscas salvas</h2>{saved.length ? <ul>{saved.map((item) => <li key={item.id}><button onClick={() => loadSaved(item)}><b>{item.name}</b><small>{new Date(item.createdAt).toLocaleString('pt-BR')} · {item.filters.keywords.length} termos · {item.filters.journalIds.length || 'todas'} revistas</small></button><button aria-label={`Excluir ${item.name}`} onClick={() => removeSaved(item.id)}><Icon name="close"/></button></li>)}</ul> : <div className="drawer-empty"><Icon name="bookmark"/><p>As estratégias que você salvar aparecerão aqui.</p></div>}</aside>}
     <main id="top">
-      <section className="hero"><div className="hero-copy"><h1>Pesquisa PubMed</h1><div className="hero-status"><span><i/> PubMed conectado</span><span>{journals.length} revistas</span></div></div><div className="hero-art" aria-hidden="true"><div className="radar"><span/><span/><span/><i/><b/></div><div className="data-trace trace-a"/><div className="data-trace trace-b"/></div></section>
-      <SearchBuilder filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onSave={openSave}/>
+      <section className="hero"><div className="hero-copy"><h1>Pesquisa PubMed</h1><div className="hero-status"><span><i/> PubMed conectado</span><span>{journals.length ? `${journals.length.toLocaleString('pt-BR')} revistas` : 'Catálogo NLM'}</span></div></div><div className="hero-art" aria-hidden="true"><div className="radar"><span/><span/><span/><i/><b/></div><div className="data-trace trace-a"/><div className="data-trace trace-b"/></div></section>
+      <SearchBuilder journals={journals} filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onSave={openSave}/>
       {error && <div className="search-error" role="alert"><Icon name="info"/><span><b>Não foi possível concluir a pesquisa.</b>{error}</span><button onClick={() => setError('')}><Icon name="close"/></button></div>}
       {result ? <Results result={result} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
     </main>

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { journals } from '../data/journals.generated';
 import { daysAgoIso, uid } from '../lib/query';
-import type { AuthorTerm, KeywordField, KeywordTerm, Operator, SearchFilters } from '../types';
+import type { AuthorTerm, Journal, KeywordField, KeywordTerm, Operator, SearchFilters } from '../types';
 import { Icon } from './Icon';
 
 interface Props {
+  journals: Journal[];
   filters: SearchFilters;
   query: string;
   busy: boolean;
@@ -22,10 +22,15 @@ const fieldOptions: { value: KeywordField; label: string }[] = [
 ];
 
 const FAVORITES_KEY = 'atlas-medico-favorite-journals-v1';
+const JOURNAL_PAGE_SIZE = 200;
 
 function readFavorites(): string[] {
   try { return JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]') as string[]; }
   catch { return []; }
+}
+
+function normalizeSearch(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
 }
 
 function parsedKeyword(raw: string): Omit<KeywordTerm, 'id'> | null {
@@ -39,12 +44,13 @@ function parsedKeyword(raw: string): Omit<KeywordTerm, 'id'> | null {
   return value ? { value, operator, field: 'title-abstract', phrase } : null;
 }
 
-export function SearchBuilder({ filters, query, busy, onChange, onSearch, onSave }: Props) {
+export function SearchBuilder({ journals, filters, query, busy, onChange, onSearch, onSave }: Props) {
   const [keywordInput, setKeywordInput] = useState('');
   const [authorInput, setAuthorInput] = useState('');
   const [journalSearch, setJournalSearch] = useState('');
   const [queryOpen, setQueryOpen] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [journalLimit, setJournalLimit] = useState(JOURNAL_PAGE_SIZE);
   const [favoriteJournalIds, setFavoriteJournalIds] = useState<string[]>(readFavorites);
 
   useEffect(() => {
@@ -55,6 +61,8 @@ export function SearchBuilder({ filters, query, busy, onChange, onSearch, onSave
     window.addEventListener('keydown', closeOnEscape);
     return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', closeOnEscape); };
   }, [journalOpen]);
+
+  useEffect(() => { setJournalLimit(JOURNAL_PAGE_SIZE); }, [journalSearch]);
 
   const update = <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => onChange({ ...filters, [key]: value });
   const addKeywords = (raw: string) => {
@@ -75,12 +83,27 @@ export function SearchBuilder({ filters, query, busy, onChange, onSearch, onSave
   const updateAuthor = (id: string, patch: Partial<AuthorTerm>) => update('authors', filters.authors.map((item) => item.id === id ? { ...item, ...patch } : item));
 
   const filteredJournals = useMemo(() => {
-    const term = journalSearch.toLocaleLowerCase('pt-BR');
-    return journals.filter((journal) => `${journal.name} ${journal.abbreviation} ${journal.issnPrint ?? ''} ${journal.issnOnline ?? ''}`.toLocaleLowerCase('pt-BR').includes(term));
-  }, [journalSearch]);
+    const term = normalizeSearch(journalSearch);
+    if (!term) return journals;
+    const score = (journal: Journal) => {
+      const name = normalizeSearch(journal.name);
+      const abbreviation = normalizeSearch(journal.abbreviation);
+      const aliases = (journal.aliases ?? []).map(normalizeSearch);
+      if ([name, abbreviation, journal.issnPrint, journal.issnOnline, ...aliases].some((value) => normalizeSearch(value ?? '') === term)) return 0;
+      if (name.startsWith(term) || abbreviation.startsWith(term)) return 1;
+      if (aliases.some((value) => value.startsWith(term))) return 2;
+      return 3;
+    };
+    return journals
+      .filter((journal) => normalizeSearch(`${journal.name} ${journal.abbreviation} ${journal.issnPrint ?? ''} ${journal.issnOnline ?? ''} ${(journal.aliases ?? []).join(' ')}`).includes(term))
+      .map((journal) => ({ journal, score: score(journal) }))
+      .sort((a, b) => a.score - b.score || a.journal.name.localeCompare(b.journal.name, 'en'))
+      .map(({ journal }) => journal);
+  }, [journalSearch, journals]);
 
   const favoriteJournals = filteredJournals.filter((journal) => favoriteJournalIds.includes(journal.id));
-  const otherJournals = filteredJournals.filter((journal) => !favoriteJournalIds.includes(journal.id));
+  const allOtherJournals = filteredJournals.filter((journal) => !favoriteJournalIds.includes(journal.id));
+  const otherJournals = allOtherJournals.slice(0, journalLimit);
 
   const applyPreset = (days: number | null) => {
     onChange({ ...filters, dateFrom: days ? daysAgoIso(days) : '', dateTo: days ? new Date().toISOString().slice(0, 10) : '' });
@@ -95,7 +118,7 @@ export function SearchBuilder({ filters, query, busy, onChange, onSearch, onSave
   };
   const closeJournals = () => { setJournalOpen(false); setJournalSearch(''); };
 
-  const journalRow = (journal: (typeof journals)[number]) => <div className={`journal-row ${filters.journalIds.includes(journal.id) ? 'selected' : ''}`} key={journal.id}>
+  const journalRow = (journal: Journal) => <div className={`journal-row ${filters.journalIds.includes(journal.id) ? 'selected' : ''}`} key={journal.id}>
     <label>
       <input type="checkbox" checked={filters.journalIds.includes(journal.id)} onChange={() => toggleJournal(journal.id)} />
       <span className="custom-check">✓</span>
@@ -140,7 +163,7 @@ export function SearchBuilder({ filters, query, busy, onChange, onSearch, onSave
 
       <div className="field-card">
         <div className="field-title"><span className="field-icon green"><Icon name="journal" /></span><div><span className="label-like">Revistas</span><small>Catálogo validado pela NLM</small></div></div>
-        <button className="selector-button" onClick={() => setJournalOpen(true)}><span>{filters.journalIds.length ? <><b>{filters.journalIds.length}</b> revistas selecionadas</> : 'Todas as revistas'}</span><Icon name="chevron" /></button>
+        <button className="selector-button" disabled={!journals.length} onClick={() => setJournalOpen(true)}><span>{!journals.length ? 'Carregando catálogo…' : filters.journalIds.length ? <><b>{filters.journalIds.length}</b> revistas selecionadas</> : 'Todas as revistas'}</span><Icon name="chevron" /></button>
         {filters.journalIds.length > 0 && <div className="selection-preview">{filters.journalIds.slice(0, 3).map((id) => <span key={id}>{journals.find((journal) => journal.id === id)?.abbreviation}</span>)}{filters.journalIds.length > 3 && <span>+{filters.journalIds.length - 3}</span>}</div>}
       </div>
 
@@ -158,7 +181,7 @@ export function SearchBuilder({ filters, query, busy, onChange, onSearch, onSave
     </div>
 
     <div className="builder-footer">
-      <label className="switch-control"><input type="checkbox" checked={filters.freeFullText} onChange={(event) => update('freeFullText', event.target.checked)} /><span className="switch-track"/><span><b>Texto gratuito agora</b><small>Aplica o filtro “free full text” do PubMed</small></span></label>
+      <div className="filter-switches"><label className="switch-control"><input type="checkbox" checked={filters.freeFullText} onChange={(event) => update('freeFullText', event.target.checked)} /><span className="switch-track"/><span><b>Texto gratuito agora</b><small>Filtro “free full text”</small></span></label><label className="switch-control"><input type="checkbox" checked={filters.excludeCorrections !== false} onChange={(event) => update('excludeCorrections', event.target.checked)} /><span className="switch-track"/><span><b>Ocultar correções</b><small>Erratas e avisos editoriais</small></span></label></div>
       <div className="search-actions"><button className="query-toggle" onClick={() => setQueryOpen(!queryOpen)}><Icon name="info" /> Ver consulta {queryOpen ? '−' : '+'}</button><button className="button primary search-button" disabled={!canSearch || busy} onClick={onSearch}><Icon name="search" />{busy ? 'Pesquisando…' : 'Pesquisar no PubMed'}</button></div>
     </div>
     {queryOpen && <div className="query-preview"><div><b>Consulta PubMed</b><span>Você pode revisar exatamente o que será enviado.</span></div><code>{query || 'Adicione pelo menos um critério de busca.'}</code></div>}
@@ -167,13 +190,14 @@ export function SearchBuilder({ filters, query, busy, onChange, onSearch, onSave
       <section className="journal-dialog" role="dialog" aria-modal="true" aria-labelledby="journal-dialog-title">
         <div className="dialog-head"><div><h2 id="journal-dialog-title">Revistas</h2><p>Busque por título, abreviação ou ISSN.</p></div><button className="dialog-close" aria-label="Fechar" onClick={closeJournals}><Icon name="close" /></button></div>
         <div className="dialog-search"><Icon name="search"/><input autoFocus value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Buscar revistas…"/><button disabled={!favoriteJournalIds.length} onClick={() => update('journalIds', favoriteJournalIds)}>Selecionar favoritas</button><button onClick={() => update('journalIds', [])}>Limpar</button></div>
-        <div className="dialog-status"><span><b>{filters.journalIds.length}</b> selecionadas</span><span><Icon name="star"/> {favoriteJournalIds.length} favoritas</span></div>
+        <div className="dialog-status"><span><b>{filters.journalIds.length}</b> selecionadas</span><span>{filteredJournals.length.toLocaleString('pt-BR')} encontradas · <Icon name="star"/> {favoriteJournalIds.length} favoritas</span></div>
         <div className="journal-list">
           {favoriteJournals.length > 0 && <><div className="journal-section-label"><span>Favoritas</span></div>{favoriteJournals.map(journalRow)}{otherJournals.length > 0 && <div className="journal-divider" />}</>}
           {otherJournals.map(journalRow)}
           {!filteredJournals.length && <div className="journal-empty">Nenhuma revista encontrada.</div>}
+          {allOtherJournals.length > otherJournals.length && <button className="journal-more" onClick={() => setJournalLimit((current) => current + JOURNAL_PAGE_SIZE)}>Mostrar mais {Math.min(JOURNAL_PAGE_SIZE, allOtherJournals.length - otherJournals.length).toLocaleString('pt-BR')}</button>}
         </div>
-        <div className="dialog-footer"><span>{journals.length} revistas no catálogo</span><button className="button primary" onClick={closeJournals}>Concluir</button></div>
+        <div className="dialog-footer"><span>{journals.length.toLocaleString('pt-BR')} títulos do catálogo PubMed/NLM</span><button className="button primary" onClick={closeJournals}>Concluir</button></div>
       </section>
     </div>, document.body)}
   </section>;
