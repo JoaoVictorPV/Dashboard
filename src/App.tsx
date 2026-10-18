@@ -85,8 +85,8 @@ export default function App() {
   const login = async (username: string, password: string) => { await authApi.login(username, password); lastActivity.current = Date.now(); lastRefresh.current = Date.now(); setAuth('in'); };
   const logout = async () => { if (!previewMode) await authApi.logout().catch(() => undefined); setResult(null); setAuth('out'); };
 
-  const performSearch = async (page = 1, sortOverride?: SortMode) => {
-    const liveQuery = buildPubMedQuery(filters, journals);
+  const performSearch = async (page = 1, sortOverride?: SortMode, queryOverride?: string) => {
+    const liveQuery = queryOverride ?? buildPubMedQuery(filters, journals);
     if (!liveQuery) return;
     setBusy(true); setError('');
     try {
@@ -97,7 +97,7 @@ export default function App() {
     finally { setBusy(false); }
   };
 
-  const changeSortMode = (sort: SortMode) => { setFilters((current) => ({ ...current, sort })); performSearch(1, sort); };
+  const changeSortMode = (sort: SortMode) => { setFilters((current) => ({ ...current, sort })); performSearch(1, sort, result?.query); };
   const updateArticle = (updated: PubMedArticle) => setResult((current) => current ? { ...current, articles: current.articles.map((article) => article.pmid === updated.pmid ? updated : article) } : current);
   const openSave = () => { setSaveName(`Busca ${new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())}`); setSaveOpen(true); };
   const saveCurrent = () => {
@@ -117,7 +117,7 @@ export default function App() {
       <section className="hero"><div className="hero-copy"><h1>Pesquisa PubMed</h1><div className="hero-status"><span><i/> PubMed conectado</span><span>{journals.length ? `${journals.length.toLocaleString('pt-BR')} revistas` : 'Catálogo NLM'}</span></div></div><div className="hero-art" aria-hidden="true"><div className="radar"><span/><span/><span/><i/><b/></div><div className="data-trace trace-a"/><div className="data-trace trace-b"/></div></section>
       <SearchBuilder journals={journals} filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onSave={openSave}/>
       {error && <div className="search-error" role="alert"><Icon name="info"/><span><b>Não foi possível concluir a pesquisa.</b>{error}</span><button onClick={() => setError('')}><Icon name="close"/></button></div>}
-      {result ? <Results result={result} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
+      {result ? <Results result={result} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page, undefined, result.query)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
     </main>
     <footer className="app-footer"><span>Atlas Médico v2</span><span>Dados bibliográficos fornecidos pela NCBI · não substitui avaliação clínica</span></footer>
     {saveOpen && createPortal(<div className="modal-layer notranslate" translate="no" onMouseDown={(event) => { if (event.target === event.currentTarget) setSaveOpen(false); }}><section className="save-dialog" role="dialog" aria-modal="true" aria-labelledby="save-title"><div className="dialog-head"><div><h2 id="save-title">Salvar busca</h2></div><button className="dialog-close" aria-label="Fechar" onClick={() => setSaveOpen(false)}><Icon name="close"/></button></div><label>Nome<input autoFocus value={saveName} onChange={(event) => setSaveName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') saveCurrent(); }}/></label><div className="save-summary">{filterSummary(filters)} · {filters.keywords.length} termos · {filters.authors.length} autores · {filters.journalIds.length || 'todas as'} revistas</div><div className="dialog-footer"><button className="button ghost" onClick={() => setSaveOpen(false)}>Cancelar</button><button className="button primary" onClick={saveCurrent}>Salvar</button></div></section></div>, document.body)}

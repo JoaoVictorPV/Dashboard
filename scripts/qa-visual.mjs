@@ -79,6 +79,12 @@ try {
   report.desktop.openAccessRestored = await openAccess.isChecked();
   await desktop.getByRole('button', { name: /Pesquisar no PubMed/ }).click();
   await desktop.getByRole('heading', { name: /artigos/ }).waitFor();
+  const resultRows = desktop.locator('.results-table tbody tr');
+  report.desktop.openAccessBadgesMatchFilter = await desktop.locator('.results-table .badge.open').count() === await resultRows.count();
+  await openAccessControl.click();
+  await desktop.getByRole('button', { name: 'Próxima →', exact: true }).click();
+  await desktop.getByText(/página 2 de/i).first().waitFor();
+  report.desktop.openAccessQueryLockedAcrossPages = await desktop.locator('.results-table .badge.open').count() === await resultRows.count();
   report.desktop.hasNoGlobalAbstractButton = await desktop.getByRole('button', { name: /Abrir resumos|Recolher resumos/ }).count() === 0;
   const affiliationTrigger = desktop.getByRole('button', { name: 'Afiliações de Almeida R' });
   await affiliationTrigger.focus();
@@ -133,7 +139,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.mobile.modalScrollWidth > report.mobile.width || report.mobile.resultsScrollWidth > report.mobile.width || !report.mobile.smartTableCards || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.hasNoEditorialFilter || !report.desktop.openAccessOffByDefault || !report.desktop.openAccessPersisted || !report.desktop.openAccessLabel || !report.desktop.openAccessRestored || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.affiliationTooltip || !report.desktop.smartFixedTable || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract || !report.desktop.export.excludesAffiliations) {
+if (overflow || report.mobile.modalScrollWidth > report.mobile.width || report.mobile.resultsScrollWidth > report.mobile.width || !report.mobile.smartTableCards || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.hasNoEditorialFilter || !report.desktop.openAccessOffByDefault || !report.desktop.openAccessPersisted || !report.desktop.openAccessLabel || !report.desktop.openAccessRestored || !report.desktop.openAccessBadgesMatchFilter || !report.desktop.openAccessQueryLockedAcrossPages || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.affiliationTooltip || !report.desktop.smartFixedTable || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract || !report.desktop.export.excludesAffiliations) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {

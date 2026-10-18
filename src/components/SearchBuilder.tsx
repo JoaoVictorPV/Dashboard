@@ -240,7 +240,7 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
     </div>
 
     <div className="builder-footer">
-      <div className="filter-switches"><label className="switch-control"><input type="checkbox" checked={filters.freeFullText} onChange={(event) => update('freeFullText', event.target.checked)} /><span className="switch-track"/><span><b>Open access</b><small>Texto integral gratuito no PubMed</small></span></label></div>
+      <div className="filter-switches"><label className="switch-control"><input type="checkbox" checked={filters.freeFullText} onChange={(event) => update('freeFullText', event.target.checked)} /><span className="switch-track"/><span><b>Open access</b><small>Marcado como gratuito pelo PubMed</small></span></label></div>
       <div className="search-actions"><button className="query-toggle" onClick={() => setQueryOpen(!queryOpen)}><Icon name="info" /> Ver consulta {queryOpen ? '−' : '+'}</button><button className="button primary search-button" disabled={!canSearch || busy} onClick={onSearch}><Icon name="search" />{busy ? 'Pesquisando…' : 'Pesquisar no PubMed'}</button></div>
     </div>
     {queryOpen && <div className="query-preview"><div><b>Consulta PubMed</b><span>Você pode revisar exatamente o que será enviado.</span></div><code>{query || 'Adicione pelo menos um critério de busca.'}</code></div>}
