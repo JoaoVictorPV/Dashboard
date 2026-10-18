@@ -29,3 +29,10 @@ export function searchPubMed(query: string, page: number, sort: SortMode) {
 export function fetchAbstract(pmid: string) {
   return jsonRequest<Pick<PubMedArticle, 'pmid' | 'abstract'>>(`/api/pubmed/details?pmid=${encodeURIComponent(pmid)}`);
 }
+
+export function fetchAbstracts(pmids: string[]) {
+  const uniquePmids = [...new Set(pmids)].slice(0, 25);
+  if (!uniquePmids.length) return Promise.resolve({} as Record<string, string>);
+  return jsonRequest<{ abstracts: Record<string, string> }>(`/api/pubmed/details?pmids=${encodeURIComponent(uniquePmids.join(','))}`)
+    .then((response) => response.abstracts);
+}
