@@ -50,6 +50,9 @@ export function buildPubMedQuery(filters: SearchFilters, journals: Journal[]) {
     clauses.push(`("${from}"[Date - Publication] : "${to}"[Date - Publication])`);
   }
   if (filters.freeFullText) clauses.push('"free full text"[sb]');
+  if (filters.excludeCorrections !== false) {
+    clauses.push('NOT ("Published Erratum"[Publication Type] OR "Retraction Notice"[Publication Type] OR "Expression of Concern"[Publication Type])');
+  }
   return clauses.join(' AND ');
 }
 
@@ -60,6 +63,7 @@ export const emptyFilters = (): SearchFilters => ({
   dateFrom: '',
   dateTo: '',
   freeFullText: true,
+  excludeCorrections: true,
   sort: 'newest',
 });
 

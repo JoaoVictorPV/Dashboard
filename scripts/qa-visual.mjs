@@ -37,8 +37,9 @@ try {
   await desktop.getByRole('button', { name: /Todas as revistas/ }).click();
   const dialog = desktop.getByRole('dialog', { name: /Revistas/ });
   await dialog.getByPlaceholder(/Buscar revistas/).fill('Radiology');
-  await dialog.getByRole('button', { name: /Adicionar Radiology aos favoritos/ }).click();
-  await dialog.locator('.journal-list label').first().click();
+  const radiologyStar = dialog.getByRole('button', { name: 'Adicionar Radiology aos favoritos', exact: true });
+  await radiologyStar.click();
+  await dialog.getByText('Radiology', { exact: true }).first().click();
   await desktop.screenshot({ path: resolve(output, 'desktop-journals.png') });
   await dialog.getByRole('button', { name: 'Concluir' }).click();
   report.desktop.favoritePersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-favorite-journals-v1') || '[]').length > 0);
