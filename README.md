@@ -35,6 +35,7 @@ Crie um projeto Vercel importando este repositório e cadastre as variáveis aba
 | Variável | Uso |
 |---|---|
 | `ADMIN_USERNAME` | nome do único usuário |
+| `ADMIN_PASSWORD` | senha protegida pela Vercel; alternativa prática ao hash |
 | `ADMIN_PASSWORD_HASH` | hash scrypt; nunca use a senha em texto puro |
 | `SESSION_SECRET` | segredo aleatório com pelo menos 32 caracteres |
 | `NCBI_API_KEY` | chave NCBI opcional, recomendada |
@@ -47,7 +48,7 @@ Gere o hash da senha em um terminal local:
 npm run auth:hash
 ```
 
-O comando oculta a digitação e imprime somente o hash. A senha citada em conversas ou versões anteriores deve ser trocada antes da publicação.
+O comando oculta a digitação e imprime somente o hash. Quando `ADMIN_PASSWORD_HASH` está presente, ele tem precedência sobre `ADMIN_PASSWORD`. A senha citada em conversas ou versões anteriores deve ser trocada periodicamente.
 
 ## Catálogo de revistas
 
