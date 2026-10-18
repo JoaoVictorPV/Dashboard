@@ -3,8 +3,14 @@ import { createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
 const attempts = new Map();
 const noStore = (res) => { res.setHeader('Cache-Control', 'no-store, max-age=0'); res.setHeader('X-Content-Type-Options', 'nosniff'); };
 const verifyPassword = (password) => {
-  const [scheme, nRaw, rRaw, pRaw, saltHex, hashHex] = (process.env.ADMIN_PASSWORD_HASH || '').split(':');
-  if (scheme !== 'scrypt' || !saltHex || !hashHex) throw new Error('ADMIN_PASSWORD_HASH ausente');
+  const configuredHash = process.env.ADMIN_PASSWORD_HASH || '';
+  if (!configuredHash && process.env.ADMIN_PASSWORD) {
+    const expected = Buffer.from(process.env.ADMIN_PASSWORD);
+    const actual = Buffer.from(password);
+    return actual.length === expected.length && timingSafeEqual(actual, expected);
+  }
+  const [scheme, nRaw, rRaw, pRaw, saltHex, hashHex] = configuredHash.split(':');
+  if (scheme !== 'scrypt' || !saltHex || !hashHex) throw new Error('Senha administrativa ausente');
   const expected = Buffer.from(hashHex, 'hex');
   const actual = scryptSync(password, Buffer.from(saltHex, 'hex'), expected.length, { N: Number(nRaw), r: Number(rRaw), p: Number(pRaw), maxmem: 64 * 1024 * 1024 });
   return actual.length === expected.length && timingSafeEqual(actual, expected);
