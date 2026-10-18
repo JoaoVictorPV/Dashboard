@@ -104,6 +104,8 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
   const favoriteJournals = filteredJournals.filter((journal) => favoriteJournalIds.includes(journal.id));
   const allOtherJournals = filteredJournals.filter((journal) => !favoriteJournalIds.includes(journal.id));
   const otherJournals = allOtherJournals.slice(0, journalLimit);
+  const listedJournalIds = [...favoriteJournals, ...otherJournals].map((journal) => journal.id);
+  const allListedJournalsSelected = listedJournalIds.length > 0 && listedJournalIds.every((id) => filters.journalIds.includes(id));
 
   const applyPreset = (days: number | null) => {
     onChange({ ...filters, dateFrom: days ? daysAgoIso(days) : '', dateTo: days ? new Date().toISOString().slice(0, 10) : '' });
@@ -115,6 +117,12 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
     const next = favoriteJournalIds.includes(id) ? favoriteJournalIds.filter((item) => item !== id) : [...favoriteJournalIds, id];
     setFavoriteJournalIds(next);
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+  };
+  const toggleAllListedJournals = () => {
+    const listed = new Set(listedJournalIds);
+    update('journalIds', allListedJournalsSelected
+      ? filters.journalIds.filter((id) => !listed.has(id))
+      : [...new Set([...filters.journalIds, ...listedJournalIds])]);
   };
   const closeJournals = () => { setJournalOpen(false); setJournalSearch(''); };
 
@@ -189,7 +197,7 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
     {journalOpen && createPortal(<div className="modal-layer notranslate" translate="no" onMouseDown={(event) => { if (event.target === event.currentTarget) closeJournals(); }}>
       <section className="journal-dialog" role="dialog" aria-modal="true" aria-labelledby="journal-dialog-title">
         <div className="dialog-head"><div><h2 id="journal-dialog-title">Revistas</h2><p>Busque por título, abreviação ou ISSN.</p></div><button className="dialog-close" aria-label="Fechar" onClick={closeJournals}><Icon name="close" /></button></div>
-        <div className="dialog-search"><Icon name="search"/><input autoFocus value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Buscar revistas…"/><button disabled={!favoriteJournalIds.length} onClick={() => update('journalIds', favoriteJournalIds)}>Selecionar favoritas</button><button onClick={() => update('journalIds', [])}>Limpar</button></div>
+        <div className="dialog-search"><Icon name="search"/><input autoFocus value={journalSearch} onChange={(event) => setJournalSearch(event.target.value)} placeholder="Buscar revistas…"/><button disabled={!listedJournalIds.length} aria-pressed={allListedJournalsSelected} title="Aplica às revistas exibidas na lista" onClick={toggleAllListedJournals}>{allListedJournalsSelected ? 'Desmarcar todas' : 'Selecionar todas'}</button><button disabled={!favoriteJournalIds.length} onClick={() => update('journalIds', favoriteJournalIds)}>Selecionar favoritas</button><button onClick={() => update('journalIds', [])}>Limpar</button></div>
         <div className="dialog-status"><span><b>{filters.journalIds.length}</b> selecionadas</span><span>{filteredJournals.length.toLocaleString('pt-BR')} encontradas · <Icon name="star"/> {favoriteJournalIds.length} favoritas</span></div>
         <div className="journal-list">
           {favoriteJournals.length > 0 && <><div className="journal-section-label"><span>Favoritas</span></div>{favoriteJournals.map(journalRow)}{otherJournals.length > 0 && <div className="journal-divider" />}</>}
