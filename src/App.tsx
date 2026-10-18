@@ -5,17 +5,33 @@ import { SearchBuilder } from './components/SearchBuilder';
 import { Results } from './components/Results';
 import { Icon } from './components/Icon';
 import { authApi, searchPubMed } from './lib/api';
-import { buildPubMedQuery, emptyFilters, uid } from './lib/query';
+import { buildPubMedQuery, datePresetLabels, emptyFilters, materializeRelativeDates, uid } from './lib/query';
 import { loadJournalCatalog } from './lib/catalog';
 import { mockSearch } from './data/mock';
-import type { Journal, PubMedArticle, SavedSearch, SearchFilters, SearchResponse, SortMode } from './types';
+import type { DatePreset, Journal, PubMedArticle, SavedSearch, SearchFilters, SearchResponse, SortMode } from './types';
 
 const previewMode = import.meta.env.DEV && new URLSearchParams(location.search).has('preview');
 const SAVED_KEY = 'atlas-medico-saved-searches-v2';
+const datePresets = new Set<DatePreset>(['30d', '90d', '6m', '1y', '2y', '5y']);
+
+function normalizeFilters(value: Partial<SearchFilters> | null | undefined): SearchFilters {
+  const filters = { ...emptyFilters(), ...value };
+  filters.datePreset = datePresets.has(filters.datePreset as DatePreset) ? filters.datePreset as DatePreset : null;
+  return filters;
+}
 
 function readSaved(): SavedSearch[] {
-  try { return JSON.parse(localStorage.getItem(SAVED_KEY) || '[]'); }
+  try {
+    const stored = JSON.parse(localStorage.getItem(SAVED_KEY) || '[]') as SavedSearch[];
+    return Array.isArray(stored) ? stored.map((item) => ({ ...item, filters: normalizeFilters(item.filters) })) : [];
+  }
   catch { return []; }
+}
+
+function periodLabel(filters: SearchFilters) {
+  if (filters.datePreset) return datePresetLabels[filters.datePreset];
+  if (filters.dateFrom || filters.dateTo) return `${filters.dateFrom || 'início'} a ${filters.dateTo || 'hoje'}`;
+  return 'Todo o período';
 }
 
 export default function App() {
@@ -31,7 +47,7 @@ export default function App() {
   const [journals, setJournals] = useState<Journal[]>([]);
   const lastActivity = useRef(Date.now());
   const lastRefresh = useRef(Date.now());
-  const query = useMemo(() => buildPubMedQuery(filters, journals), [filters]);
+  const query = useMemo(() => buildPubMedQuery(filters, journals), [filters, journals]);
 
   useEffect(() => {
     if (previewMode) return;
@@ -64,10 +80,11 @@ export default function App() {
   const logout = async () => { if (!previewMode) await authApi.logout().catch(() => undefined); setResult(null); setAuth('out'); };
 
   const performSearch = async (page = 1, sortOverride?: SortMode) => {
-    if (!query) return;
+    const liveQuery = buildPubMedQuery(filters, journals);
+    if (!liveQuery) return;
     setBusy(true); setError('');
     try {
-      const response = previewMode ? mockSearch(query, page) : await searchPubMed(query, page, sortOverride ?? filters.sort);
+      const response = previewMode ? mockSearch(liveQuery, page) : await searchPubMed(liveQuery, page, sortOverride ?? filters.sort);
       setResult(response);
       requestAnimationFrame(() => document.querySelector('.results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'A busca falhou. Tente novamente.'); }
@@ -82,14 +99,14 @@ export default function App() {
     setSaved(next); localStorage.setItem(SAVED_KEY, JSON.stringify(next)); setSaveOpen(false);
   };
   const removeSaved = (id: string) => { const next = saved.filter((item) => item.id !== id); setSaved(next); localStorage.setItem(SAVED_KEY, JSON.stringify(next)); };
-  const loadSaved = (item: SavedSearch) => { setFilters(item.filters); setSavedOpen(false); setResult(null); };
+  const loadSaved = (item: SavedSearch) => { setFilters(materializeRelativeDates(normalizeFilters(item.filters))); setSavedOpen(false); setResult(null); };
 
   if (auth === 'loading') return <div className="app-loader"><span className="brand-mark"><Icon name="sparkle"/></span><p>Preparando o Atlas Médico…</p></div>;
   if (auth === 'out') return <LoginScreen onLogin={login} />;
 
   return <div className="app-shell notranslate" translate="no">
     <header className="topbar"><a className="brand" href="#top"><span className="brand-mark"><Icon name="sparkle"/></span><span><b>ATLAS</b><small>MÉDICO</small></span></a><nav><span className="source-status"><i/> PubMed conectado</span><button onClick={() => setSavedOpen(!savedOpen)}><Icon name="bookmark"/> Buscas salvas <em>{saved.length}</em></button><button aria-label="Sair" title="Encerrar sessão" onClick={logout}><Icon name="logout"/></button></nav></header>
-    {savedOpen && <aside className="saved-drawer"><div><span className="eyebrow">Sua biblioteca</span><button aria-label="Fechar" onClick={() => setSavedOpen(false)}><Icon name="close"/></button></div><h2>Buscas salvas</h2>{saved.length ? <ul>{saved.map((item) => <li key={item.id}><button onClick={() => loadSaved(item)}><b>{item.name}</b><small>{new Date(item.createdAt).toLocaleString('pt-BR')} · {item.filters.keywords.length} termos · {item.filters.journalIds.length || 'todas'} revistas</small></button><button aria-label={`Excluir ${item.name}`} onClick={() => removeSaved(item.id)}><Icon name="close"/></button></li>)}</ul> : <div className="drawer-empty"><Icon name="bookmark"/><p>As estratégias que você salvar aparecerão aqui.</p></div>}</aside>}
+    {savedOpen && <aside className="saved-drawer"><div><span className="eyebrow">Sua biblioteca</span><button aria-label="Fechar" onClick={() => setSavedOpen(false)}><Icon name="close"/></button></div><h2>Buscas salvas</h2>{saved.length ? <ul>{saved.map((item) => <li key={item.id}><button onClick={() => loadSaved(item)}><b>{item.name}</b><small>{periodLabel(item.filters)} · {item.filters.keywords.length} termos · {item.filters.journalIds.length || 'todas'} revistas</small></button><button aria-label={`Excluir ${item.name}`} onClick={() => removeSaved(item.id)}><Icon name="close"/></button></li>)}</ul> : <div className="drawer-empty"><Icon name="bookmark"/><p>As estratégias que você salvar aparecerão aqui.</p></div>}</aside>}
     <main id="top">
       <section className="hero"><div className="hero-copy"><h1>Pesquisa PubMed</h1><div className="hero-status"><span><i/> PubMed conectado</span><span>{journals.length ? `${journals.length.toLocaleString('pt-BR')} revistas` : 'Catálogo NLM'}</span></div></div><div className="hero-art" aria-hidden="true"><div className="radar"><span/><span/><span/><i/><b/></div><div className="data-trace trace-a"/><div className="data-trace trace-b"/></div></section>
       <SearchBuilder journals={journals} filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onSave={openSave}/>
@@ -97,6 +114,6 @@ export default function App() {
       {result ? <Results result={result} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
     </main>
     <footer className="app-footer"><span>Atlas Médico v2</span><span>Dados bibliográficos fornecidos pela NCBI · não substitui avaliação clínica</span></footer>
-    {saveOpen && createPortal(<div className="modal-layer notranslate" translate="no" onMouseDown={(event) => { if (event.target === event.currentTarget) setSaveOpen(false); }}><section className="save-dialog" role="dialog" aria-modal="true" aria-labelledby="save-title"><div className="dialog-head"><div><h2 id="save-title">Salvar busca</h2></div><button className="dialog-close" aria-label="Fechar" onClick={() => setSaveOpen(false)}><Icon name="close"/></button></div><label>Nome<input autoFocus value={saveName} onChange={(event) => setSaveName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') saveCurrent(); }}/></label><div className="save-summary">{filters.keywords.length} termos · {filters.authors.length} autores · {filters.journalIds.length || 'todas as'} revistas</div><div className="dialog-footer"><button className="button ghost" onClick={() => setSaveOpen(false)}>Cancelar</button><button className="button primary" onClick={saveCurrent}>Salvar</button></div></section></div>, document.body)}
+    {saveOpen && createPortal(<div className="modal-layer notranslate" translate="no" onMouseDown={(event) => { if (event.target === event.currentTarget) setSaveOpen(false); }}><section className="save-dialog" role="dialog" aria-modal="true" aria-labelledby="save-title"><div className="dialog-head"><div><h2 id="save-title">Salvar busca</h2></div><button className="dialog-close" aria-label="Fechar" onClick={() => setSaveOpen(false)}><Icon name="close"/></button></div><label>Nome<input autoFocus value={saveName} onChange={(event) => setSaveName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') saveCurrent(); }}/></label><div className="save-summary">{periodLabel(filters)} · {filters.keywords.length} termos · {filters.authors.length} autores · {filters.journalIds.length || 'todas as'} revistas</div><div className="dialog-footer"><button className="button ghost" onClick={() => setSaveOpen(false)}>Cancelar</button><button className="button primary" onClick={saveCurrent}>Salvar</button></div></section></div>, document.body)}
   </div>;
 }

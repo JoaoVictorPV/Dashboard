@@ -1,6 +1,7 @@
 export type Operator = 'AND' | 'OR' | 'NOT';
 export type KeywordField = 'title-abstract' | 'mesh' | 'title' | 'all';
 export type SortMode = 'relevance' | 'newest';
+export type DatePreset = '30d' | '90d' | '6m' | '1y' | '2y' | '5y';
 
 export interface Journal {
   id: string;
@@ -31,6 +32,7 @@ export interface SearchFilters {
   journalIds: string[];
   dateFrom: string;
   dateTo: string;
+  datePreset: DatePreset | null;
   freeFullText: boolean;
   excludeCorrections: boolean;
   sort: SortMode;
