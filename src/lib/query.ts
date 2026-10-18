@@ -9,6 +9,12 @@ export const datePresetLabels: Record<DatePreset, string> = {
   '5y': 'Últimos 5 anos',
 };
 
+export const explicitEditorialNoticeExpression = [
+  '("Published Erratum"[pt:noexp] AND (erratum[Title] OR corrigendum[Title] OR correction[Title]))',
+  '("Retraction Notice"[pt:noexp] AND (retraction[Title] OR retracted[Title] OR withdrawal[Title]))',
+  '("Expression of Concern"[pt:noexp] AND "expression of concern"[Title])',
+].join(' OR ');
+
 function localDateIso(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -103,7 +109,7 @@ export function buildPubMedQuery(filters: SearchFilters, journals: Journal[], no
   }
   if (resolvedFilters.freeFullText) clauses.push('"free full text"[sb]');
   if (resolvedFilters.excludeCorrections !== false) {
-    clauses.push('NOT ("Published Erratum"[Publication Type] OR "Retraction Notice"[Publication Type] OR "Expression of Concern"[Publication Type])');
+    clauses.push(`NOT (${explicitEditorialNoticeExpression})`);
   }
   return clauses.join(' AND ');
 }
@@ -116,7 +122,7 @@ export const emptyFilters = (): SearchFilters => ({
   dateTo: '',
   datePreset: null,
   freeFullText: true,
-  excludeCorrections: true,
+  excludeCorrections: false,
   sort: 'newest',
 });
 
