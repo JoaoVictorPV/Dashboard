@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { fetchAbstract, fetchAbstracts } from '../lib/api';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
+import { fetchAbstract, fetchAbstracts, fetchAuthorAffiliations } from '../lib/api';
 import { downloadResultsHtml } from '../lib/exportHtml';
 import { translateArticleContent } from '../lib/translate';
-import type { PubMedArticle, SearchResponse, SortMode } from '../types';
+import type { AuthorAffiliation, PubMedArticle, SearchResponse, SortMode } from '../types';
 import { Icon } from './Icon';
 
 type Column = 'title' | 'authors' | 'journal' | 'publicationDate' | 'pmid';
@@ -17,6 +18,28 @@ interface Props {
 }
 
 const collator = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+const columnOrder: Column[] = ['title', 'authors', 'journal', 'publicationDate', 'pmid'];
+const columnWeight: Record<Column, number> = { title: 42, authors: 22, journal: 16, publicationDate: 9, pmid: 11 };
+const columnMinimum: Record<Column, number> = { title: 390, authors: 220, journal: 170, publicationDate: 110, pmid: 130 };
+
+function normalizedAuthorName(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+}
+
+function AffiliationHint({ author, affiliations }: { author: string; affiliations: string[] }) {
+  const id = useId();
+  const trigger = useRef<HTMLButtonElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
+  const show = () => {
+    const rect = trigger.current?.getBoundingClientRect();
+    if (!rect) return;
+    setPosition({ top: rect.bottom + 7, left: Math.max(12, Math.min(rect.left - 8, window.innerWidth - 342)) });
+  };
+  return <span className="affiliation-hint">
+    <button ref={trigger} type="button" aria-label={`Afiliações de ${author}`} aria-describedby={position ? id : undefined} onMouseEnter={show} onMouseLeave={() => setPosition(null)} onFocus={show} onBlur={() => setPosition(null)}><Icon name="info" /></button>
+    {position && createPortal(<span id={id} role="tooltip" className="affiliation-tooltip" style={{ top: position.top, left: position.left }}><b>{author}</b>{affiliations.map((affiliation) => <span key={affiliation}>{affiliation}</span>)}</span>, document.body)}
+  </span>;
+}
 
 export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate }: Props) {
   const [sort, setSort] = useState<{ column: Column; direction: Direction }>({ column: 'publicationDate', direction: 'desc' });
@@ -24,6 +47,7 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
   const [columns, setColumns] = useState<Column[]>(['title', 'authors', 'journal', 'publicationDate', 'pmid']);
   const [openAbstracts, setOpenAbstracts] = useState<string[]>([]);
   const [loadingAbstracts, setLoadingAbstracts] = useState<string[]>([]);
+  const [affiliations, setAffiliations] = useState<Record<string, AuthorAffiliation[]>>({});
   const [columnMenu, setColumnMenu] = useState(false);
   const [translation, setTranslation] = useState<{
     running: boolean;
@@ -32,6 +56,16 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
     error: string;
     phase: 'idle' | 'fetching' | 'translating' | 'done';
   }>({ running: false, completed: 0, total: 0, error: '', phase: 'idle' });
+
+  const pmidKey = result.articles.map((article) => article.pmid).join(',');
+  useEffect(() => {
+    let active = true;
+    setAffiliations({});
+    fetchAuthorAffiliations(pmidKey.split(',').filter(Boolean))
+      .then((values) => { if (active) setAffiliations(values); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [pmidKey]);
 
   const articles = useMemo(() => result.articles.map((article, index) => ({ article, index })).sort((a, b) => {
     const left = sort.column === 'title' ? (a.article.translatedTitle || a.article.title) : a.article[sort.column];
@@ -44,7 +78,7 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
 
   const changeSort = (column: Column) => setSort((current) => ({ column, direction: current.column === column && current.direction === 'asc' ? 'desc' : 'asc' }));
   const ariaSort = (column: Column) => sort.column === column ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
-  const toggleColumn = (column: Column) => setColumns((current) => current.includes(column) ? current.filter((item) => item !== column) : [...current, column]);
+  const toggleColumn = (column: Column) => setColumns((current) => current.includes(column) ? (current.length > 1 ? current.filter((item) => item !== column) : current) : [...current, column]);
   const toggleAbstract = async (article: PubMedArticle) => {
     if (openAbstracts.includes(article.pmid)) { setOpenAbstracts((current) => current.filter((id) => id !== article.pmid)); return; }
     setOpenAbstracts((current) => [...current, article.pmid]);
@@ -88,6 +122,10 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
   const first = (result.page - 1) * result.pageSize + 1;
   const last = Math.min(result.page * result.pageSize, result.total);
+  const visibleColumns = columnOrder.filter((column) => columns.includes(column));
+  const totalColumnWeight = visibleColumns.reduce((total, column) => total + columnWeight[column], 0);
+  const tableMinimum = Math.max(660, visibleColumns.reduce((total, column) => total + columnMinimum[column], 0));
+  const authorAffiliations = (pmid: string, author: string) => affiliations[pmid]?.find((item) => normalizedAuthorName(item.name) === normalizedAuthorName(author))?.affiliations ?? [];
 
   return <section className="results" aria-labelledby="results-title">
     <div className="results-heading">
@@ -101,19 +139,19 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
       <div className="segmented" aria-label="Ordem global"><button className={sortMode === 'newest' ? 'active' : ''} onClick={() => onSortMode('newest')}>Mais recentes</button><button className={sortMode === 'relevance' ? 'active' : ''} onClick={() => onSortMode('relevance')}>Mais relevantes</button></div>
       <div className="toolbar-spacer" />
       <label className="toolbar-select">Densidade<select value={density} onChange={(event) => setDensity(event.target.value as typeof density)}><option value="compact">Compacta</option><option value="normal">Padrão</option><option value="comfortable">Confortável</option></select></label>
-      <div className="column-control"><button className="button ghost" onClick={() => setColumnMenu(!columnMenu)}><Icon name="columns"/> Colunas</button>{columnMenu && <div className="column-menu">{(['title', 'authors', 'journal', 'publicationDate', 'pmid'] as Column[]).map((column) => <label key={column}><input type="checkbox" checked={columns.includes(column)} onChange={() => toggleColumn(column)} />{{ title: 'Título', authors: 'Autores', journal: 'Revista', publicationDate: 'Data', pmid: 'Identificadores' }[column]}</label>)}</div>}</div>
+      <div className="column-control"><button className="button ghost" onClick={() => setColumnMenu(!columnMenu)}><Icon name="columns"/> Colunas</button>{columnMenu && <div className="column-menu">{columnOrder.map((column) => <label key={column}><input type="checkbox" checked={columns.includes(column)} disabled={columns.length === 1 && columns.includes(column)} onChange={() => toggleColumn(column)} />{{ title: 'Título', authors: 'Autores', journal: 'Revista', publicationDate: 'Data', pmid: 'Identificadores' }[column]}</label>)}</div>}</div>
     </div>
 
     <div className={`results-table-wrap density-${density}`}>
-      <table className="results-table"><thead><tr>
+      <table className="results-table smart-table" style={{ '--table-min-width': `${tableMinimum}px` } as CSSProperties}><colgroup>{visibleColumns.map((column) => <col key={column} style={{ width: `${(columnWeight[column] / totalColumnWeight) * 100}%` }} />)}</colgroup><thead><tr>
         {columns.includes('title') && <th aria-sort={ariaSort('title')}><button onClick={() => changeSort('title')}>Artigo <span>↕</span></button></th>}
         {columns.includes('authors') && <th aria-sort={ariaSort('authors')}><button onClick={() => changeSort('authors')}>Autores <span>↕</span></button></th>}
         {columns.includes('journal') && <th aria-sort={ariaSort('journal')}><button onClick={() => changeSort('journal')}>Revista <span>↕</span></button></th>}
         {columns.includes('publicationDate') && <th aria-sort={ariaSort('publicationDate')}><button onClick={() => changeSort('publicationDate')}>Publicação <span>↕</span></button></th>}
         {columns.includes('pmid') && <th aria-sort={ariaSort('pmid')}><button onClick={() => changeSort('pmid')}>Acesso <span>↕</span></button></th>}
       </tr></thead><tbody>{articles.map((article) => <tr key={article.pmid}>
-        {columns.includes('title') && <td data-label="Artigo" className="title-cell"><div className="result-badges">{article.pmcId && <span className="badge open">Texto gratuito</span>}{article.hasAbstract && <span className="badge">Com resumo</span>}{article.translatedTitle && <span className="badge translated">PT</span>}</div><a href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer">{article.translatedTitle || article.title}<Icon name="external"/></a>{article.translatedTitle && <span className="original-title">Original: {article.title}</span>}{article.hasAbstract && <><button className="abstract-toggle" onClick={() => toggleAbstract(article)}>{openAbstracts.includes(article.pmid) ? 'Ocultar resumo' : 'Ler resumo'}</button>{openAbstracts.includes(article.pmid) && <div className="abstract-panel">{loadingAbstracts.includes(article.pmid) ? <span className="loading-line">Carregando resumo…</span> : article.translatedAbstract ? <><p>{article.translatedAbstract}</p><details className="abstract-original"><summary>Ver resumo original</summary><p>{article.abstract}</p></details></> : (article.abstract ?? 'Use “Ler resumo” para carregar o texto.')}</div>}</>}</td>}
-        {columns.includes('authors') && <td data-label="Autores"><span className="authors-text">{article.authors.slice(0, 3).join(', ') || '—'}{article.authors.length > 3 && <small> +{article.authors.length - 3}</small>}</span></td>}
+        {columns.includes('title') && <td data-label="Artigo" className="title-cell"><div className="result-badges">{article.pmcId && <span className="badge open">Open access</span>}{article.hasAbstract && <span className="badge">Com resumo</span>}{article.translatedTitle && <span className="badge translated">PT</span>}</div><a href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer">{article.translatedTitle || article.title}<Icon name="external"/></a>{article.translatedTitle && <span className="original-title">Original: {article.title}</span>}{article.hasAbstract && <><button className="abstract-toggle" onClick={() => toggleAbstract(article)}>{openAbstracts.includes(article.pmid) ? 'Ocultar resumo' : 'Ler resumo'}</button>{openAbstracts.includes(article.pmid) && <div className="abstract-panel">{loadingAbstracts.includes(article.pmid) ? <span className="loading-line">Carregando resumo…</span> : article.translatedAbstract ? <><p>{article.translatedAbstract}</p><details className="abstract-original"><summary>Ver resumo original</summary><p>{article.abstract}</p></details></> : (article.abstract ?? 'Use “Ler resumo” para carregar o texto.')}</div>}</>}</td>}
+        {columns.includes('authors') && <td data-label="Autores"><span className="authors-text">{article.authors.length ? article.authors.slice(0, 3).map((author, index) => { const authorDetails = authorAffiliations(article.pmid, author); return <span className="author-entry" key={`${article.pmid}-${author}`}>{index > 0 && <span className="author-separator">, </span>}<span>{author}</span>{authorDetails.length > 0 && <AffiliationHint author={author} affiliations={authorDetails} />}</span>; }) : '—'}{article.authors.length > 3 && <small> +{article.authors.length - 3}</small>}</span></td>}
         {columns.includes('journal') && <td data-label="Revista"><b className="journal-name">{article.journal}</b><small>{article.journalAbbreviation}</small></td>}
         {columns.includes('publicationDate') && <td data-label="Publicação"><time>{article.publicationDate || '—'}</time></td>}
         {columns.includes('pmid') && <td data-label="Acesso"><a className="id-link" href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer">PMID {article.pmid}</a>{article.doi && <a className="id-link subtle" href={`https://doi.org/${article.doi}`} target="_blank" rel="noreferrer">DOI</a>}</td>}

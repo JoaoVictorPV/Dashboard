@@ -6,11 +6,11 @@ Buscador pessoal de literatura médica no PubMed. A versão 2 substitui o antigo
 
 - termos em formato de tags com `AND`, `OR`, `NOT`, frase exata e campo PubMed;
 - múltiplos autores e catálogo completo de revistas citadas no PubMed, com busca por nome, abreviação, ISSN ou organização conhecida;
-- datas livres e atalhos de 30 dias, 6 meses, 1 ano e 5 anos;
-- filtro de texto completo gratuito disponível agora;
+- datas livres e períodos móveis de 30 dias, 90 dias, 6 meses, 1 ano, 2 anos e 5 anos;
+- filtro opcional `Open access`, desligado por padrão e preservado nas buscas salvas;
 - paginação real e ordenação global no PubMed;
-- ordenação local por qualquer coluna, densidade e colunas ajustáveis;
-- resumo sob demanda e abertura de todos os resumos da página;
+- ordenação local por qualquer coluna, densidade e colunas com largura fixa redistribuída conforme a visibilidade;
+- resumos sob demanda e afiliações dos autores em tooltips;
 - buscas salvas no navegador;
 - exportação `.html` independente, pesquisável, ordenável, ajustável e pronta para impressão;
 - sessão `HttpOnly` com encerramento após duas horas sem atividade.

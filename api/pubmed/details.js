@@ -33,6 +33,28 @@ const extractAbstract = (articleXml) => [...articleXml.matchAll(/<AbstractText\b
   .filter(Boolean)
   .join('\n\n');
 
+export const extractAuthorAffiliations = (articleXml) => [...articleXml.matchAll(/<Author\b[^>]*>([\s\S]*?)<\/Author>/gi)]
+  .map((authorMatch) => {
+    const authorXml = authorMatch[1];
+    const value = (tag) => {
+      const match = authorXml.match(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+      return match ? decodeXml(match[1]) : '';
+    };
+    const lastName = value('LastName');
+    const initials = value('Initials');
+    const name = [lastName, initials].filter(Boolean).join(' ') || value('CollectiveName');
+    const affiliations = [...authorXml.matchAll(/<Affiliation\b[^>]*>([\s\S]*?)<\/Affiliation>/gi)]
+      .map((match) => decodeXml(match[1]))
+      .filter(Boolean);
+    return { name, affiliations: [...new Set(affiliations)] };
+  })
+  .filter((author) => author.name && author.affiliations.length);
+
+const extractPmid = (articleXml) => {
+  const match = articleXml.match(/<PMID\b[^>]*>([\s\S]*?)<\/PMID>/i);
+  return match ? decodeXml(match[1]) : '';
+};
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido.' });
@@ -49,19 +71,25 @@ export default async function handler(req, res) {
     const response = await fetch('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body, signal: AbortSignal.timeout(20000) });
     if (!response.ok) throw new Error(`NCBI ${response.status}`);
     const xml = await response.text();
-    if (singlePmid) {
-      return res.status(200).json({ pmid: singlePmid, abstract: extractAbstract(xml) || 'O PubMed não forneceu um resumo para este registro.' });
-    }
     const abstracts = {};
+    const affiliations = {};
     for (const match of xml.matchAll(/<PubmedArticle\b[\s\S]*?<\/PubmedArticle>/gi)) {
-      const pmidMatch = match[0].match(/<PMID\b[^>]*>([\s\S]*?)<\/PMID>/i);
-      const pmid = pmidMatch ? decodeXml(pmidMatch[1]) : '';
+      const pmid = extractPmid(match[0]);
       const abstract = extractAbstract(match[0]);
       if (pmids.includes(pmid) && abstract) abstracts[pmid] = abstract;
+      const authorAffiliations = extractAuthorAffiliations(match[0]);
+      if (pmids.includes(pmid) && authorAffiliations.length) affiliations[pmid] = authorAffiliations;
     }
-    return res.status(200).json({ abstracts });
+    if (singlePmid) {
+      return res.status(200).json({
+        pmid: singlePmid,
+        abstract: abstracts[singlePmid] || 'O PubMed não forneceu um resumo para este registro.',
+        authorAffiliations: affiliations[singlePmid] || [],
+      });
+    }
+    return res.status(200).json({ abstracts, affiliations });
   } catch (error) {
     console.error(error);
-    return res.status(502).json({ error: 'Não foi possível obter o resumo no PubMed.' });
+    return res.status(502).json({ error: 'Não foi possível obter os detalhes do artigo no PubMed.' });
   }
 }

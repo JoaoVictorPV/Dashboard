@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { buildPubMedQuery, keywordExpression, relativeDateRange } from '../src/lib/query';
+import { buildPubMedQuery, emptyFilters, keywordExpression, relativeDateRange } from '../src/lib/query';
 import type { Journal, SearchFilters } from '../src/types';
 
 const journals: Journal[] = [{ id: '1', name: 'Radiology', abbreviation: 'Radiology', issnPrint: '0033-8419', issnOnline: null }];
 
 describe('construtor PubMed', () => {
+  it('mantém Open access desligado por padrão', () => {
+    expect(emptyFilters().freeFullText).toBe(false);
+  });
+
   it('preserva a ordem lógica e explicita os campos', () => {
     const expression = keywordExpression([
       { id: 'a', value: 'deep learning', operator: 'AND', field: 'title-abstract', phrase: true },
