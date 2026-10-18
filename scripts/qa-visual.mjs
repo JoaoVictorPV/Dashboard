@@ -38,6 +38,10 @@ try {
   await desktop.getByRole('button', { name: /Todas as revistas/ }).click();
   const dialog = desktop.getByRole('dialog', { name: /Revistas/ });
   await dialog.getByPlaceholder(/Buscar revistas/).fill('Radiology');
+  const selectAllJournals = dialog.getByRole('button', { name: 'Selecionar todas', exact: true });
+  await selectAllJournals.click();
+  report.desktop.selectAllJournals = await dialog.getByRole('button', { name: 'Desmarcar todas', exact: true }).count() === 1;
+  await dialog.getByRole('button', { name: 'Limpar', exact: true }).click();
   const radiologyStar = dialog.getByRole('button', { name: 'Adicionar Radiology aos favoritos', exact: true });
   await radiologyStar.click();
   await dialog.getByText('Radiology', { exact: true }).first().click();
@@ -63,12 +67,18 @@ try {
   await mobile.goto(baseUrl, { waitUntil: 'networkidle' });
   report.mobile = await mobile.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, bodyWidth: document.body.scrollWidth }));
   await mobile.screenshot({ path: resolve(output, 'mobile-initial.png') });
+  await mobile.getByRole('button', { name: /Todas as revistas/ }).click();
+  const mobileDialog = mobile.getByRole('dialog', { name: /Revistas/ });
+  await mobileDialog.getByPlaceholder(/Buscar revistas/).fill('Radiology');
+  report.mobile.selectAllVisible = await mobileDialog.getByRole('button', { name: 'Selecionar todas', exact: true }).isVisible();
+  report.mobile.modalScrollWidth = await mobile.evaluate(() => document.documentElement.scrollWidth);
+  await mobile.screenshot({ path: resolve(output, 'mobile-journals.png') });
 } finally {
   await browser.close();
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
+if (overflow || report.mobile.modalScrollWidth > report.mobile.width || !report.mobile.selectAllVisible || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.selectAllJournals || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {
