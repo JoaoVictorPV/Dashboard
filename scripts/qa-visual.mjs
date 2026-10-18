@@ -28,6 +28,7 @@ try {
     URL.createObjectURL = (blob) => { window.__atlasDownloadBlob = blob; return createObjectURL(blob); };
   });
   desktop.on('console', (message) => { if (message.type() === 'error') report.consoleErrors.push(message.text()); });
+  await desktop.route('**/api/pubmed/details?pmids=*', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ abstracts: { '39277194': 'This review evaluates opportunistic CT screening for osteoporosis.' } }) }));
   await desktop.goto(baseUrl, { waitUntil: 'networkidle' });
   report.desktop = await desktop.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, title: document.title }));
   await desktop.screenshot({ path: resolve(output, 'desktop-initial.png') });
@@ -45,15 +46,17 @@ try {
   report.desktop.favoritePersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-favorite-journals-v1') || '[]').length > 0);
   await desktop.getByRole('button', { name: /Pesquisar no PubMed/ }).click();
   await desktop.getByRole('heading', { name: /artigos/ }).waitFor();
+  report.desktop.hasNoGlobalAbstractButton = await desktop.getByRole('button', { name: /Abrir resumos|Recolher resumos/ }).count() === 0;
+  await desktop.getByRole('button', { name: /Traduzir títulos e resumos/ }).click();
+  await desktop.getByRole('button', { name: /Conteúdo traduzido/ }).waitFor();
   await desktop.getByRole('button', { name: 'Ler resumo' }).first().click();
-  await desktop.getByRole('button', { name: /Traduzir títulos/ }).click();
-  await desktop.getByRole('button', { name: /Títulos traduzidos/ }).waitFor();
+  await desktop.locator('.abstract-panel').first().getByText(/^PT:/).waitFor();
   await desktop.screenshot({ path: resolve(output, 'desktop-results.png') });
   const downloadPromise = desktop.waitForEvent('download');
   await desktop.getByRole('button', { name: /Exportar HTML/ }).click();
   const download = await downloadPromise;
   const exported = await desktop.evaluate(async () => window.__atlasDownloadBlob ? await window.__atlasDownloadBlob.text() : '');
-  report.desktop.export = { filename: download.suggestedFilename(), bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas'), translated: exported.includes('PT: Foundation models') };
+  report.desktop.export = { filename: download.suggestedFilename(), bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas'), translatedTitle: exported.includes('PT: Foundation models'), translatedAbstract: exported.includes('PT: Foundation models have the potential') };
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   mobile.on('console', (message) => { if (message.type() === 'error') report.consoleErrors.push(message.text()); });
@@ -65,7 +68,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translated) {
+if (overflow || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {

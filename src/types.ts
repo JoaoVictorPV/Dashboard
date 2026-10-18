@@ -48,6 +48,7 @@ export interface PubMedArticle {
   pmcId: string | null;
   hasAbstract: boolean;
   abstract?: string;
+  translatedAbstract?: string;
 }
 
 export interface SearchResponse {
