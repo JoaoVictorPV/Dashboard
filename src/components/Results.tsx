@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { fetchAbstract } from '../lib/api';
 import { downloadResultsHtml } from '../lib/exportHtml';
+import { translateArticleTitles } from '../lib/translate';
 import type { PubMedArticle, SearchResponse, SortMode } from '../types';
 import { Icon } from './Icon';
 
@@ -24,10 +25,11 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
   const [openAbstracts, setOpenAbstracts] = useState<string[]>([]);
   const [loadingAbstracts, setLoadingAbstracts] = useState<string[]>([]);
   const [columnMenu, setColumnMenu] = useState(false);
+  const [translation, setTranslation] = useState({ running: false, completed: 0, total: 0, error: '' });
 
   const articles = useMemo(() => result.articles.map((article, index) => ({ article, index })).sort((a, b) => {
-    const left = a.article[sort.column];
-    const right = b.article[sort.column];
+    const left = sort.column === 'title' ? (a.article.translatedTitle || a.article.title) : a.article[sort.column];
+    const right = sort.column === 'title' ? (b.article.translatedTitle || b.article.title) : b.article[sort.column];
     const aValue = Array.isArray(left) ? left.join(' ') : String(left ?? '');
     const bValue = Array.isArray(right) ? right.join(' ') : String(right ?? '');
     const compared = collator.compare(aValue, bValue);
@@ -52,15 +54,28 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
     }
   };
 
+  const translateTitles = async () => {
+    setTranslation({ running: true, completed: 0, total: articles.length, error: '' });
+    try {
+      const values = await translateArticleTitles(articles, (completed, total) => setTranslation({ running: true, completed, total, error: '' }));
+      articles.forEach((article) => onArticleUpdate({ ...article, translatedTitle: values[article.pmid] }));
+      setTranslation({ running: false, completed: articles.length, total: articles.length, error: '' });
+    } catch (reason) {
+      setTranslation({ running: false, completed: 0, total: articles.length, error: reason instanceof Error ? reason.message : 'Não foi possível traduzir os títulos.' });
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
   const first = (result.page - 1) * result.pageSize + 1;
   const last = Math.min(result.page * result.pageSize, result.total);
 
   return <section className="results" aria-labelledby="results-title">
     <div className="results-heading">
-      <div><span className="eyebrow">Resultado vivo</span><h2 id="results-title">{result.total.toLocaleString('pt-BR')} artigos encontrados</h2><p>Exibindo {first.toLocaleString('pt-BR')}–{last.toLocaleString('pt-BR')} · página {result.page} de {totalPages.toLocaleString('pt-BR')}</p></div>
-      <div className="results-actions"><button className="button secondary" onClick={() => downloadResultsHtml(articles, result.query)}><Icon name="download"/> Exportar HTML ajustável</button></div>
+      <div><span className="eyebrow">Resultados</span><h2 id="results-title">{result.total.toLocaleString('pt-BR')} artigos</h2><p>{first.toLocaleString('pt-BR')}–{last.toLocaleString('pt-BR')} · página {result.page} de {totalPages.toLocaleString('pt-BR')}</p></div>
+      <div className="results-actions"><button className="button ghost translate-button" disabled={translation.running || articles.every((article) => article.translatedTitle)} onClick={translateTitles}><Icon name="translate"/> {translation.running ? `${translation.completed}/${translation.total}` : articles.every((article) => article.translatedTitle) ? 'Títulos traduzidos' : 'Traduzir títulos'}</button><button className="button secondary" onClick={() => downloadResultsHtml(articles, result.query)}><Icon name="download"/> Exportar HTML</button></div>
     </div>
+    {translation.error && <div className="translation-status error" role="alert">{translation.error}</div>}
+    {translation.running && <div className="translation-status"><span style={{ width: `${Math.max(6, (translation.completed / Math.max(1, translation.total)) * 100)}%` }}/><b>Traduzindo títulos no navegador…</b></div>}
 
     <div className="table-toolbar">
       <div className="segmented" aria-label="Ordem global"><button className={sortMode === 'newest' ? 'active' : ''} onClick={() => onSortMode('newest')}>Mais recentes</button><button className={sortMode === 'relevance' ? 'active' : ''} onClick={() => onSortMode('relevance')}>Mais relevantes</button></div>
@@ -78,7 +93,7 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
         {columns.includes('publicationDate') && <th aria-sort={ariaSort('publicationDate')}><button onClick={() => changeSort('publicationDate')}>Publicação <span>↕</span></button></th>}
         {columns.includes('pmid') && <th aria-sort={ariaSort('pmid')}><button onClick={() => changeSort('pmid')}>Acesso <span>↕</span></button></th>}
       </tr></thead><tbody>{articles.map((article) => <tr key={article.pmid}>
-        {columns.includes('title') && <td data-label="Artigo" className="title-cell"><div className="result-badges">{article.pmcId && <span className="badge open">Texto gratuito</span>}{article.hasAbstract && <span className="badge">Com resumo</span>}</div><a href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer">{article.title}<Icon name="external"/></a>{article.hasAbstract && <><button className="abstract-toggle" onClick={() => toggleAbstract(article)}>{openAbstracts.includes(article.pmid) ? 'Ocultar resumo' : 'Ler resumo'}</button>{openAbstracts.includes(article.pmid) && <div className="abstract-panel">{loadingAbstracts.includes(article.pmid) ? <span className="loading-line">Carregando resumo…</span> : (article.abstract ?? 'Use “Ler resumo” para carregar o texto.')}</div>}</>}</td>}
+        {columns.includes('title') && <td data-label="Artigo" className="title-cell"><div className="result-badges">{article.pmcId && <span className="badge open">Texto gratuito</span>}{article.hasAbstract && <span className="badge">Com resumo</span>}{article.translatedTitle && <span className="badge translated">PT</span>}</div><a href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer">{article.translatedTitle || article.title}<Icon name="external"/></a>{article.translatedTitle && <span className="original-title">Original: {article.title}</span>}{article.hasAbstract && <><button className="abstract-toggle" onClick={() => toggleAbstract(article)}>{openAbstracts.includes(article.pmid) ? 'Ocultar resumo' : 'Ler resumo'}</button>{openAbstracts.includes(article.pmid) && <div className="abstract-panel">{loadingAbstracts.includes(article.pmid) ? <span className="loading-line">Carregando resumo…</span> : (article.abstract ?? 'Use “Ler resumo” para carregar o texto.')}</div>}</>}</td>}
         {columns.includes('authors') && <td data-label="Autores"><span className="authors-text">{article.authors.slice(0, 3).join(', ') || '—'}{article.authors.length > 3 && <small> +{article.authors.length - 3}</small>}</span></td>}
         {columns.includes('journal') && <td data-label="Revista"><b className="journal-name">{article.journal}</b><small>{article.journalAbbreviation}</small></td>}
         {columns.includes('publicationDate') && <td data-label="Publicação"><time>{article.publicationDate || '—'}</time></td>}

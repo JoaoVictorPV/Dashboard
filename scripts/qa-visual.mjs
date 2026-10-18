@@ -1,6 +1,6 @@
 import { chromium } from 'playwright-core';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const baseUrl = process.env.QA_URL || 'http://127.0.0.1:4173/?preview=1';
@@ -11,10 +11,22 @@ if (!executablePath) throw new Error('Chrome não encontrado. Defina CHROME_PATH
 const output = resolve('artifacts');
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ headless: true, executablePath });
-const report = { baseUrl, desktop: {}, mobile: {}, consoleErrors: [] };
+const report = { baseUrl, login: {}, desktop: {}, mobile: {}, consoleErrors: [] };
 
 try {
+  const login = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await login.route('**/api/auth/session', (route) => route.fulfill({ status: 401, contentType: 'application/json', body: '{"authenticated":false}' }));
+  await login.goto(baseUrl.replace('?preview=1', ''), { waitUntil: 'networkidle' });
+  report.login = { button: await login.getByRole('button', { name: /^Entrar/ }).innerText(), protectedFromBrowserTranslation: await login.locator('main[translate="no"]').count() === 1 };
+  await login.screenshot({ path: resolve(output, 'desktop-login.png') });
+  await login.close();
+
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
+  await desktop.addInitScript(() => {
+    window.Translator = { availability: async () => 'available', create: async () => ({ translate: async (text) => `PT: ${text}` }) };
+    const createObjectURL = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = (blob) => { window.__atlasDownloadBlob = blob; return createObjectURL(blob); };
+  });
   desktop.on('console', (message) => { if (message.type() === 'error') report.consoleErrors.push(message.text()); });
   await desktop.goto(baseUrl, { waitUntil: 'networkidle' });
   report.desktop = await desktop.evaluate(() => ({ width: innerWidth, scrollWidth: document.documentElement.scrollWidth, title: document.title }));
@@ -23,21 +35,24 @@ try {
   await desktop.getByLabel('Palavras-chave').fill('"deep learning"; |radiomics; -editorial');
   await desktop.getByLabel('Adicionar termo').click();
   await desktop.getByRole('button', { name: /Todas as revistas/ }).click();
-  const dialog = desktop.getByRole('dialog', { name: /Selecionar revistas/ });
-  await dialog.getByPlaceholder(/Buscar entre/).fill('Radiology');
+  const dialog = desktop.getByRole('dialog', { name: /Revistas/ });
+  await dialog.getByPlaceholder(/Buscar revistas/).fill('Radiology');
+  await dialog.getByRole('button', { name: /Adicionar Radiology aos favoritos/ }).click();
   await dialog.locator('.journal-list label').first().click();
-  await dialog.getByRole('button', { name: 'Aplicar seleção' }).click();
+  await desktop.screenshot({ path: resolve(output, 'desktop-journals.png') });
+  await dialog.getByRole('button', { name: 'Concluir' }).click();
+  report.desktop.favoritePersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-favorite-journals-v1') || '[]').length > 0);
   await desktop.getByRole('button', { name: /Pesquisar no PubMed/ }).click();
-  await desktop.getByRole('heading', { name: /artigos encontrados/ }).waitFor();
+  await desktop.getByRole('heading', { name: /artigos/ }).waitFor();
   await desktop.getByRole('button', { name: 'Ler resumo' }).first().click();
+  await desktop.getByRole('button', { name: /Traduzir títulos/ }).click();
+  await desktop.getByRole('button', { name: /Títulos traduzidos/ }).waitFor();
   await desktop.screenshot({ path: resolve(output, 'desktop-results.png') });
   const downloadPromise = desktop.waitForEvent('download');
   await desktop.getByRole('button', { name: /Exportar HTML/ }).click();
   const download = await downloadPromise;
-  const exportedPath = resolve(output, 'atlas-export.html');
-  await download.saveAs(exportedPath);
-  const exported = await readFile(exportedPath, 'utf8');
-  report.desktop.export = { bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas') };
+  const exported = await desktop.evaluate(async () => window.__atlasDownloadBlob ? await window.__atlasDownloadBlob.text() : '');
+  report.desktop.export = { filename: download.suggestedFilename(), bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas'), translated: exported.includes('PT: Foundation models') };
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
   mobile.on('console', (message) => { if (message.type() === 'error') report.consoleErrors.push(message.text()); });
@@ -49,7 +64,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.consoleErrors.length || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns) {
+if (overflow || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.favoritePersisted || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translated) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {
