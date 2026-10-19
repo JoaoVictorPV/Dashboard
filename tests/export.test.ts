@@ -9,9 +9,10 @@ describe('exportação HTML', () => {
     expect(html).toContain('Densidade padrão');
     expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(html).toContain('Título traduzido');
-    expect(html).toContain('Resumo em português');
-    expect(html).toContain('Resumo seguro');
-    expect(html).toContain('Safe abstract');
+    expect(html).not.toContain('Resumo em português');
+    expect(html).not.toContain('Resumo seguro');
+    expect(html).not.toContain('Safe abstract');
+    expect(html).not.toContain('<details>');
     expect(html).toContain('Original:');
     expect(html).not.toContain('<script>alert(1)</script>');
   });
