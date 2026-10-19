@@ -98,6 +98,7 @@ export default function App() {
   };
 
   const changeSortMode = (sort: SortMode) => { setFilters((current) => ({ ...current, sort })); performSearch(1, sort, result?.query); };
+  const clearSearch = () => { setFilters(emptyFilters()); setResult(null); setError(''); };
   const updateArticle = (updated: PubMedArticle) => setResult((current) => current ? { ...current, articles: current.articles.map((article) => article.pmid === updated.pmid ? updated : article) } : current);
   const openSave = () => { setSaveName(`Busca ${new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())}`); setSaveOpen(true); };
   const saveCurrent = () => {
@@ -115,7 +116,7 @@ export default function App() {
     {savedOpen && <aside className="saved-drawer"><div><span className="eyebrow">Sua biblioteca</span><button aria-label="Fechar" onClick={() => setSavedOpen(false)}><Icon name="close"/></button></div><h2>Buscas salvas</h2>{saved.length ? <ul>{saved.map((item) => <li key={item.id}><button onClick={() => loadSaved(item)}><b>{item.name}</b><small>{filterSummary(item.filters)} · {item.filters.keywords.length} termos · {item.filters.journalIds.length || 'todas'} revistas</small></button><button aria-label={`Excluir ${item.name}`} onClick={() => removeSaved(item.id)}><Icon name="close"/></button></li>)}</ul> : <div className="drawer-empty"><Icon name="bookmark"/><p>As estratégias que você salvar aparecerão aqui.</p></div>}</aside>}
     <main id="top">
       <section className="hero"><div className="hero-copy"><h1>Pesquisa PubMed</h1><div className="hero-status"><span><i/> PubMed conectado</span><span>{journals.length ? `${journals.length.toLocaleString('pt-BR')} revistas` : 'Catálogo NLM'}</span></div></div><div className="hero-art" aria-hidden="true"><div className="radar"><span/><span/><span/><i/><b/></div><div className="data-trace trace-a"/><div className="data-trace trace-b"/></div></section>
-      <SearchBuilder journals={journals} filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onSave={openSave}/>
+      <SearchBuilder journals={journals} filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onClear={clearSearch} onSave={openSave}/>
       {error && <div className="search-error" role="alert"><Icon name="info"/><span><b>Não foi possível concluir a pesquisa.</b>{error}</span><button onClick={() => setError('')}><Icon name="close"/></button></div>}
       {result ? <Results result={result} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page, undefined, result.query)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
     </main>
