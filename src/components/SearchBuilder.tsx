@@ -19,6 +19,7 @@ interface Props {
   busy: boolean;
   onChange: (filters: SearchFilters) => void;
   onSearch: () => void;
+  onClear: () => void;
   onSave: () => void;
 }
 
@@ -47,7 +48,7 @@ function parsedKeyword(raw: string): Omit<KeywordTerm, 'id'> | null {
   return value ? { value, operator, field: 'title-abstract', phrase } : null;
 }
 
-export function SearchBuilder({ journals, filters, query, busy, onChange, onSearch, onSave }: Props) {
+export function SearchBuilder({ journals, filters, query, busy, onChange, onSearch, onClear, onSave }: Props) {
   const [keywordInput, setKeywordInput] = useState('');
   const [authorInput, setAuthorInput] = useState('');
   const [journalSearch, setJournalSearch] = useState('');
@@ -58,6 +59,16 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
   const [journalScope, setJournalScope] = useState('catalog');
   const [folderEditor, setFolderEditor] = useState<FolderEditor | null>(null);
   const [folderMenuJournalId, setFolderMenuJournalId] = useState<string | null>(null);
+
+  const clearAll = () => {
+    setKeywordInput('');
+    setAuthorInput('');
+    setJournalSearch('');
+    setQueryOpen(false);
+    setJournalOpen(false);
+    setFolderMenuJournalId(null);
+    onClear();
+  };
 
   useEffect(() => {
     if (!journalOpen) return;
@@ -241,7 +252,7 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
 
     <div className="builder-footer">
       <div className="filter-switches"><label className="switch-control"><input type="checkbox" checked={filters.freeFullText} onChange={(event) => update('freeFullText', event.target.checked)} /><span className="switch-track"/><span><b>Open access</b><small>Marcado como gratuito pelo PubMed</small></span></label></div>
-      <div className="search-actions"><button className="query-toggle" onClick={() => setQueryOpen(!queryOpen)}><Icon name="info" /> Ver consulta {queryOpen ? '−' : '+'}</button><button className="button primary search-button" disabled={!canSearch || busy} onClick={onSearch}><Icon name="search" />{busy ? 'Pesquisando…' : 'Pesquisar no PubMed'}</button></div>
+      <div className="search-actions"><button className="query-toggle" onClick={() => setQueryOpen(!queryOpen)}><Icon name="info" /> Ver consulta {queryOpen ? '−' : '+'}</button><div className="search-submit-actions"><button className="button ghost clear-button" disabled={busy} onClick={clearAll}><Icon name="close" /> Limpar</button><button className="button primary search-button" disabled={!canSearch || busy} onClick={onSearch}><Icon name="search" />{busy ? 'Pesquisando…' : 'Pesquisar no PubMed'}</button></div></div>
     </div>
     {queryOpen && <div className="query-preview"><div><b>Consulta PubMed</b><span>Você pode revisar exatamente o que será enviado.</span></div><code>{query || 'Adicione pelo menos um critério de busca.'}</code></div>}
 
