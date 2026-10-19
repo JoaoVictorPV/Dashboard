@@ -7,12 +7,10 @@ const escapeHtml = (value: unknown) => String(value ?? '')
 export function createResultsHtml(articles: PubMedArticle[], query: string) {
   const created = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
   const rows = articles.map((article, index) => {
-    const abstract = article.translatedAbstract || article.abstract;
-    const abstractHtml = abstract ? `<details><summary>Resumo${article.translatedAbstract ? ' em português' : ''}</summary><p>${escapeHtml(abstract)}</p>${article.translatedAbstract && article.abstract ? `<p class="original"><strong>Original:</strong> ${escapeHtml(article.abstract)}</p>` : ''}</details>` : '';
     return `
     <tr>
       <td data-value="${index + 1}">${index + 1}</td>
-      <td data-value="${escapeHtml((article.translatedTitle || article.title).toLowerCase())}"><a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(article.pmid)}/" target="_blank" rel="noreferrer">${escapeHtml(article.translatedTitle || article.title)}</a>${article.translatedTitle ? `<span class="original">Original: ${escapeHtml(article.title)}</span>` : ''}${abstractHtml}</td>
+      <td data-value="${escapeHtml((article.translatedTitle || article.title).toLowerCase())}"><a href="https://pubmed.ncbi.nlm.nih.gov/${encodeURIComponent(article.pmid)}/" target="_blank" rel="noreferrer">${escapeHtml(article.translatedTitle || article.title)}</a>${article.translatedTitle ? `<span class="original">Original: ${escapeHtml(article.title)}</span>` : ''}</td>
       <td data-value="${escapeHtml(article.authors.join(', ').toLowerCase())}">${escapeHtml(article.authors.join(', ') || '—')}</td>
       <td data-value="${escapeHtml(article.journal.toLowerCase())}">${escapeHtml(article.journal)}</td>
       <td data-value="${escapeHtml(article.publicationDate)}">${escapeHtml(article.publicationDate || '—')}</td>

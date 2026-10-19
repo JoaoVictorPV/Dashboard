@@ -91,6 +91,7 @@ try {
   const affiliationTooltip = desktop.getByRole('tooltip');
   await affiliationTooltip.waitFor();
   report.desktop.affiliationTooltip = await affiliationTooltip.getByText(/Universidade de São Paulo/).isVisible();
+  report.desktop.affiliationTriggerIncludesAuthor = (await affiliationTrigger.innerText()).includes('Almeida R');
   await affiliationTrigger.blur();
   const table = desktop.locator('.results-table');
   const titleBefore = await table.locator('th').first().evaluate((element) => element.getBoundingClientRect().width);
@@ -112,7 +113,7 @@ try {
   await desktop.getByRole('button', { name: /Exportar HTML/ }).click();
   const download = await downloadPromise;
   const exported = await desktop.evaluate(async () => window.__atlasDownloadBlob ? await window.__atlasDownloadBlob.text() : '');
-  report.desktop.export = { filename: download.suggestedFilename(), bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas'), translatedTitle: exported.includes('PT: Foundation models'), translatedAbstract: exported.includes('PT: Foundation models have the potential'), excludesAffiliations: !exported.includes('Universidade de São Paulo') };
+  report.desktop.export = { filename: download.suggestedFilename(), bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas'), translatedTitle: exported.includes('PT: Foundation models'), excludesAbstracts: !exported.includes('PT: Foundation models have the potential') && !exported.includes('<details>'), excludesAffiliations: !exported.includes('Universidade de São Paulo') };
   await desktop.getByRole('button', { name: 'Limpar', exact: true }).click();
   report.desktop.clearAll = !(await openAccess.isChecked())
     && await desktop.locator('.logic-list').count() === 0
@@ -144,7 +145,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.mobile.modalScrollWidth > report.mobile.width || report.mobile.resultsScrollWidth > report.mobile.width || !report.mobile.smartTableCards || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.hasNoEditorialFilter || !report.desktop.openAccessOffByDefault || !report.desktop.openAccessPersisted || !report.desktop.openAccessLabel || !report.desktop.openAccessRestored || !report.desktop.openAccessBadgesMatchFilter || !report.desktop.openAccessQueryLockedAcrossPages || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.affiliationTooltip || !report.desktop.smartFixedTable || !report.desktop.clearAll || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.translatedAbstract || !report.desktop.export.excludesAffiliations) {
+if (overflow || report.mobile.modalScrollWidth > report.mobile.width || report.mobile.resultsScrollWidth > report.mobile.width || !report.mobile.smartTableCards || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.hasNoEditorialFilter || !report.desktop.openAccessOffByDefault || !report.desktop.openAccessPersisted || !report.desktop.openAccessLabel || !report.desktop.openAccessRestored || !report.desktop.openAccessBadgesMatchFilter || !report.desktop.openAccessQueryLockedAcrossPages || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.affiliationTooltip || !report.desktop.affiliationTriggerIncludesAuthor || !report.desktop.smartFixedTable || !report.desktop.clearAll || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.excludesAbstracts || !report.desktop.export.excludesAffiliations) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {
