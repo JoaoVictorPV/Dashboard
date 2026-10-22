@@ -44,6 +44,7 @@ export default function App() {
   const [auth, setAuth] = useState<'loading' | 'in' | 'out'>(previewMode ? 'in' : 'loading');
   const [filters, setFilters] = useState<SearchFilters>(emptyFilters);
   const [result, setResult] = useState<SearchResponse | null>(null);
+  const [searchRevision, setSearchRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<SavedSearch[]>(readSaved);
@@ -92,6 +93,7 @@ export default function App() {
     try {
       const response = previewMode ? mockSearch(liveQuery, page) : await searchPubMed(liveQuery, page, sortOverride ?? filters.sort);
       setResult(response);
+      setSearchRevision((current) => current + 1);
       requestAnimationFrame(() => document.querySelector('.results')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'A busca falhou. Tente novamente.'); }
     finally { setBusy(false); }
@@ -118,7 +120,7 @@ export default function App() {
       <section className="hero"><div className="hero-copy"><h1>Pesquisa PubMed</h1><div className="hero-status"><span><i/> PubMed conectado</span><span>{journals.length ? `${journals.length.toLocaleString('pt-BR')} revistas` : 'Catálogo NLM'}</span></div></div><div className="hero-art" aria-hidden="true"><div className="radar"><span/><span/><span/><i/><b/></div><div className="data-trace trace-a"/><div className="data-trace trace-b"/></div></section>
       <SearchBuilder journals={journals} filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onClear={clearSearch} onSave={openSave}/>
       {error && <div className="search-error" role="alert"><Icon name="info"/><span><b>Não foi possível concluir a pesquisa.</b>{error}</span><button onClick={() => setError('')}><Icon name="close"/></button></div>}
-      {result ? <Results result={result} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page, undefined, result.query)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
+      {result ? <Results result={result} searchRevision={searchRevision} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page, undefined, result.query)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
     </main>
     <footer className="app-footer"><span>Atlas Médico v2</span><span>Dados bibliográficos fornecidos pela NCBI · não substitui avaliação clínica</span></footer>
     {saveOpen && createPortal(<div className="modal-layer notranslate" translate="no" onMouseDown={(event) => { if (event.target === event.currentTarget) setSaveOpen(false); }}><section className="save-dialog" role="dialog" aria-modal="true" aria-labelledby="save-title"><div className="dialog-head"><div><h2 id="save-title">Salvar busca</h2></div><button className="dialog-close" aria-label="Fechar" onClick={() => setSaveOpen(false)}><Icon name="close"/></button></div><label>Nome<input autoFocus value={saveName} onChange={(event) => setSaveName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') saveCurrent(); }}/></label><div className="save-summary">{filterSummary(filters)} · {filters.keywords.length} termos · {filters.authors.length} autores · {filters.journalIds.length || 'todas as'} revistas</div><div className="dialog-footer"><button className="button ghost" onClick={() => setSaveOpen(false)}>Cancelar</button><button className="button primary" onClick={saveCurrent}>Salvar</button></div></section></div>, document.body)}

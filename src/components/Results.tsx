@@ -12,6 +12,7 @@ type Direction = 'asc' | 'desc';
 
 interface Props {
   result: SearchResponse;
+  searchRevision: number;
   sortMode: SortMode;
   onSortMode: (sort: SortMode) => void;
   onPage: (page: number) => void;
@@ -42,7 +43,7 @@ function AffiliationHint({ author, affiliations }: { author: string; affiliation
   </span>;
 }
 
-export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate }: Props) {
+export function Results({ result, searchRevision, sortMode, onSortMode, onPage, onArticleUpdate }: Props) {
   const [sort, setSort] = useState<{ column: Column; direction: Direction }>({ column: 'publicationDate', direction: 'desc' });
   const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>('normal');
   const [columns, setColumns] = useState<Column[]>(['title', 'authors', 'journal', 'publicationDate', 'pmid']);
@@ -57,6 +58,14 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
     error: string;
     phase: 'idle' | 'fetching' | 'translating' | 'done';
   }>({ running: false, completed: 0, total: 0, error: '', phase: 'idle' });
+  const latestSearchRevision = useRef(searchRevision);
+  latestSearchRevision.current = searchRevision;
+
+  useEffect(() => {
+    setTranslation({ running: false, completed: 0, total: 0, error: '', phase: 'idle' });
+    setOpenAbstracts([]);
+    setLoadingAbstracts([]);
+  }, [searchRevision]);
 
   const pmidKey = result.articles.map((article) => article.pmid).join(',');
   useEffect(() => {
@@ -96,6 +105,8 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
   };
 
   const translateContent = async () => {
+    const targetRevision = searchRevision;
+    const isStale = () => latestSearchRevision.current !== targetRevision;
     const missingAbstracts = articles.filter((article) => article.hasAbstract && !article.abstract).map((article) => article.pmid);
     setTranslation({ running: true, completed: 0, total: articles.length + articles.filter((article) => article.hasAbstract).length, error: '', phase: 'fetching' });
     let abstracts: Record<string, string> = {};
@@ -105,10 +116,12 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
         try { abstracts = await fetchAbstracts(missingAbstracts); }
         catch { abstractWarning = 'Os títulos foram traduzidos, mas alguns resumos não puderam ser carregados pelo PubMed.'; }
       }
+      if (isStale()) return;
       const enrichedArticles = articles.map((article) => ({ ...article, abstract: article.abstract || abstracts[article.pmid] }));
       const total = enrichedArticles.length + enrichedArticles.filter((article) => article.abstract).length;
       setTranslation({ running: true, completed: 0, total, error: '', phase: 'translating' });
-      const values = await translateArticleContent(enrichedArticles, (completed, progressTotal) => setTranslation({ running: true, completed, total: progressTotal, error: '', phase: 'translating' }));
+      const values = await translateArticleContent(enrichedArticles, (completed, progressTotal) => { if (!isStale()) setTranslation({ running: true, completed, total: progressTotal, error: '', phase: 'translating' }); });
+      if (isStale()) return;
       enrichedArticles.forEach((article) => onArticleUpdate({
         ...article,
         translatedTitle: values[article.pmid].title,
@@ -116,6 +129,7 @@ export function Results({ result, sortMode, onSortMode, onPage, onArticleUpdate 
       }));
       setTranslation({ running: false, completed: total, total, error: abstractWarning, phase: abstractWarning ? 'idle' : 'done' });
     } catch (reason) {
+      if (isStale()) return;
       setTranslation({ running: false, completed: 0, total: articles.length, error: reason instanceof Error ? reason.message : 'Não foi possível traduzir os títulos e resumos.', phase: 'idle' });
     }
   };
