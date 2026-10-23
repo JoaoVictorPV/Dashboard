@@ -42,6 +42,12 @@ try {
   report.desktop.hasNoEditorialFilter = await desktop.getByRole('checkbox', { name: /Ocultar avisos|Ocultar correções/ }).count() === 0;
   await desktop.getByRole('button', { name: /Todas as revistas/ }).click();
   const dialog = desktop.getByRole('dialog', { name: /Revistas/ });
+  report.desktop.defaultJournalFolders = {
+    radiology: /35/.test(await dialog.getByRole('button', { name: 'Radiologia 35', exact: true }).innerText()),
+    internalMedicine: /28/.test(await dialog.getByRole('button', { name: 'Clínica médica 28', exact: true }).innerText()),
+    orthopedics: /26/.test(await dialog.getByRole('button', { name: 'Ortopedia 26', exact: true }).innerText()),
+    total: await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-favorite-journals-v1') || '[]').length),
+  };
   await dialog.getByPlaceholder(/Buscar revistas/).fill('Radiology');
   const selectAllJournals = dialog.getByRole('button', { name: 'Selecionar todas', exact: true });
   await selectAllJournals.click();
@@ -86,6 +92,13 @@ try {
   await desktop.getByText(/página 2 de/i).first().waitFor();
   report.desktop.openAccessQueryLockedAcrossPages = await desktop.locator('.results-table .badge.open').count() === await resultRows.count();
   report.desktop.hasNoGlobalAbstractButton = await desktop.getByRole('button', { name: /Abrir resumos|Recolher resumos/ }).count() === 0;
+  const saveArticleButton = desktop.locator('.save-article-button').first();
+  await saveArticleButton.click();
+  report.desktop.savedArticlePersisted = await desktop.evaluate(() => JSON.parse(localStorage.getItem('atlas-medico-saved-articles-v1') || '[]').length === 1);
+  report.desktop.savedArticleButtonState = await saveArticleButton.getAttribute('aria-pressed') === 'true';
+  await desktop.getByRole('button', { name: /Artigos salvos/ }).click();
+  report.desktop.savedArticleDrawer = await desktop.locator('.saved-articles-drawer li').count() === 1;
+  await desktop.locator('.saved-articles-drawer').getByRole('button', { name: 'Fechar' }).click();
   const affiliationTrigger = desktop.getByRole('button', { name: 'Afiliações de Almeida R' });
   await affiliationTrigger.focus();
   const affiliationTooltip = desktop.getByRole('tooltip');
@@ -115,7 +128,7 @@ try {
   await desktop.getByRole('button', { name: /Exportar HTML/ }).click();
   const download = await downloadPromise;
   const exported = await desktop.evaluate(async () => window.__atlasDownloadBlob ? await window.__atlasDownloadBlob.text() : '');
-  report.desktop.export = { filename: download.suggestedFilename(), bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas'), translatedTitle: exported.includes('PT: Foundation models'), excludesAbstracts: !exported.includes('PT: Foundation models have the potential') && !exported.includes('<details>'), excludesAffiliations: !exported.includes('Universidade de São Paulo') };
+  report.desktop.export = { filename: download.suggestedFilename(), bytes: exported.length, sortable: exported.includes('data-sort'), adjustableColumns: exported.includes('Ajustar colunas'), translatedTitle: exported.includes('PT: Foundation models'), excludesAbstracts: !exported.includes('PT: Foundation models have the potential') && !exported.includes('<details>'), excludesAffiliations: !exported.includes('Universidade de São Paulo'), excludesSavedControls: !exported.includes('save-article-button') && !exported.includes('Artigos salvos') };
   await desktop.getByRole('button', { name: /Pesquisar no PubMed/ }).click();
   const resetTranslationButton = desktop.getByRole('button', { name: /Traduzir títulos e resumos/ });
   await resetTranslationButton.waitFor();
@@ -151,7 +164,7 @@ try {
 }
 
 const overflow = report.mobile.scrollWidth > report.mobile.width || report.mobile.bodyWidth > report.mobile.width;
-if (overflow || report.mobile.modalScrollWidth > report.mobile.width || report.mobile.resultsScrollWidth > report.mobile.width || !report.mobile.smartTableCards || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.hasNoEditorialFilter || !report.desktop.openAccessOffByDefault || !report.desktop.openAccessPersisted || !report.desktop.openAccessLabel || !report.desktop.openAccessRestored || !report.desktop.openAccessBadgesMatchFilter || !report.desktop.openAccessQueryLockedAcrossPages || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.affiliationTooltip || !report.desktop.affiliationTriggerIncludesAuthor || !report.desktop.affiliationTooltipReadable || !report.desktop.affiliationCursorNormal || !report.desktop.smartFixedTable || !report.desktop.translationResetsOnNewSearch || !report.desktop.clearAll || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.excludesAbstracts || !report.desktop.export.excludesAffiliations) {
+if (overflow || report.mobile.modalScrollWidth > report.mobile.width || report.mobile.resultsScrollWidth > report.mobile.width || !report.mobile.smartTableCards || !report.mobile.selectAllVisible || !report.mobile.folderNavigation || report.consoleErrors.length || !report.login.protectedFromBrowserTranslation || report.login.button.replace(/\s+/g, ' ') !== 'Entrar →' || !report.desktop.hasNoEditorialFilter || !report.desktop.openAccessOffByDefault || !report.desktop.openAccessPersisted || !report.desktop.openAccessLabel || !report.desktop.openAccessRestored || !report.desktop.openAccessBadgesMatchFilter || !report.desktop.openAccessQueryLockedAcrossPages || !report.desktop.favoritePersisted || !report.desktop.folderPersisted || !report.desktop.folderNavigation || !report.desktop.selectAllJournals || !report.desktop.defaultJournalFolders?.radiology || !report.desktop.defaultJournalFolders?.internalMedicine || !report.desktop.defaultJournalFolders?.orthopedics || report.desktop.defaultJournalFolders?.total !== 89 || !report.desktop.relativePresetActive || !report.desktop.relativePresetPersisted || !report.desktop.relativePresetLabel || !report.desktop.relativePresetRestored || !report.desktop.hasNoGlobalAbstractButton || !report.desktop.savedArticlePersisted || !report.desktop.savedArticleButtonState || !report.desktop.savedArticleDrawer || !report.desktop.affiliationTooltip || !report.desktop.affiliationTriggerIncludesAuthor || !report.desktop.affiliationTooltipReadable || !report.desktop.affiliationCursorNormal || !report.desktop.smartFixedTable || !report.desktop.translationResetsOnNewSearch || !report.desktop.clearAll || !report.desktop.export.sortable || !report.desktop.export.adjustableColumns || !report.desktop.export.translatedTitle || !report.desktop.export.excludesAbstracts || !report.desktop.export.excludesAffiliations || !report.desktop.export.excludesSavedControls) {
   console.error(JSON.stringify(report, null, 2));
   process.exitCode = 1;
 } else {

@@ -5,6 +5,7 @@ import {
   favoriteJournalIds as collectFavoriteJournalIds,
   persistJournalFolders,
   readJournalFolders,
+  seedDefaultJournalFolders,
   setJournalFolderMembership,
   type JournalFolder,
 } from '../lib/journalFavorites';
@@ -80,6 +81,11 @@ export function SearchBuilder({ journals, filters, query, busy, onChange, onSear
   }, [journalOpen]);
 
   useEffect(() => { setJournalLimit(JOURNAL_PAGE_SIZE); }, [journalSearch, journalScope]);
+
+  useEffect(() => {
+    if (!journals.length) return;
+    setFavoriteFolders((current) => seedDefaultJournalFolders(current, journals));
+  }, [journals]);
 
   const update = <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => onChange({ ...filters, [key]: value });
   const addKeywords = (raw: string) => {

@@ -57,6 +57,10 @@ export interface PubMedArticle {
   translatedAbstract?: string;
 }
 
+export interface SavedArticle extends PubMedArticle {
+  savedAt: string;
+}
+
 export interface SearchResponse {
   articles: PubMedArticle[];
   total: number;
