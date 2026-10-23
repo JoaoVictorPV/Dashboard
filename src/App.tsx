@@ -7,8 +7,9 @@ import { Icon } from './components/Icon';
 import { authApi, searchPubMed } from './lib/api';
 import { buildPubMedQuery, datePresetLabels, emptyFilters, materializeRelativeDates, uid } from './lib/query';
 import { loadJournalCatalog } from './lib/catalog';
+import { persistSavedArticles, readSavedArticles, toggleSavedArticle, updateSavedArticle } from './lib/savedArticles';
 import { mockSearch } from './data/mock';
-import type { DatePreset, Journal, PubMedArticle, SavedSearch, SearchFilters, SearchResponse, SortMode } from './types';
+import type { DatePreset, Journal, PubMedArticle, SavedArticle, SavedSearch, SearchFilters, SearchResponse, SortMode } from './types';
 
 const previewMode = import.meta.env.DEV && new URLSearchParams(location.search).has('preview');
 const SAVED_KEY = 'atlas-medico-saved-searches-v2';
@@ -49,6 +50,8 @@ export default function App() {
   const [error, setError] = useState('');
   const [saved, setSaved] = useState<SavedSearch[]>(readSaved);
   const [savedOpen, setSavedOpen] = useState(false);
+  const [savedArticles, setSavedArticles] = useState<SavedArticle[]>(readSavedArticles);
+  const [savedArticlesOpen, setSavedArticlesOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [journals, setJournals] = useState<Journal[]>([]);
@@ -101,7 +104,29 @@ export default function App() {
 
   const changeSortMode = (sort: SortMode) => { setFilters((current) => ({ ...current, sort })); performSearch(1, sort, result?.query); };
   const clearSearch = () => { setFilters(emptyFilters()); setResult(null); setError(''); };
-  const updateArticle = (updated: PubMedArticle) => setResult((current) => current ? { ...current, articles: current.articles.map((article) => article.pmid === updated.pmid ? updated : article) } : current);
+  const updateArticle = (updated: PubMedArticle) => {
+    setResult((current) => current ? { ...current, articles: current.articles.map((article) => article.pmid === updated.pmid ? updated : article) } : current);
+    setSavedArticles((current) => {
+      if (!current.some((article) => article.pmid === updated.pmid)) return current;
+      const next = updateSavedArticle(current, updated);
+      persistSavedArticles(next);
+      return next;
+    });
+  };
+  const toggleArticle = (article: PubMedArticle) => {
+    setSavedArticles((current) => {
+      const next = toggleSavedArticle(current, article);
+      persistSavedArticles(next);
+      return next;
+    });
+  };
+  const removeSavedArticle = (pmid: string) => {
+    setSavedArticles((current) => {
+      const next = current.filter((article) => article.pmid !== pmid);
+      persistSavedArticles(next);
+      return next;
+    });
+  };
   const openSave = () => { setSaveName(`Busca ${new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())}`); setSaveOpen(true); };
   const saveCurrent = () => {
     const next = [{ id: uid('saved'), name: saveName.trim() || 'Busca sem título', filters, createdAt: new Date().toISOString() }, ...saved].slice(0, 30);
@@ -114,13 +139,14 @@ export default function App() {
   if (auth === 'out') return <LoginScreen onLogin={login} />;
 
   return <div className="app-shell notranslate" translate="no">
-    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark"><Icon name="sparkle"/></span><span><b>ATLAS</b><small>MÉDICO</small></span></a><nav><span className="source-status"><i/> PubMed conectado</span><button onClick={() => setSavedOpen(!savedOpen)}><Icon name="bookmark"/> Buscas salvas <em>{saved.length}</em></button><button aria-label="Sair" title="Encerrar sessão" onClick={logout}><Icon name="logout"/></button></nav></header>
+    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark"><Icon name="sparkle"/></span><span><b>ATLAS</b><small>MÉDICO</small></span></a><nav><span className="source-status"><i/> PubMed conectado</span><button className="library-button" aria-expanded={savedOpen} onClick={() => { setSavedOpen(!savedOpen); setSavedArticlesOpen(false); }}><Icon name="bookmark"/><span>Buscas salvas</span><em>{saved.length}</em></button><button className="library-button" aria-expanded={savedArticlesOpen} onClick={() => { setSavedArticlesOpen(!savedArticlesOpen); setSavedOpen(false); }}><Icon name="articles"/><span>Artigos salvos</span><em>{savedArticles.length}</em></button><button aria-label="Sair" title="Encerrar sessão" onClick={logout}><Icon name="logout"/></button></nav></header>
     {savedOpen && <aside className="saved-drawer"><div><span className="eyebrow">Sua biblioteca</span><button aria-label="Fechar" onClick={() => setSavedOpen(false)}><Icon name="close"/></button></div><h2>Buscas salvas</h2>{saved.length ? <ul>{saved.map((item) => <li key={item.id}><button onClick={() => loadSaved(item)}><b>{item.name}</b><small>{filterSummary(item.filters)} · {item.filters.keywords.length} termos · {item.filters.journalIds.length || 'todas'} revistas</small></button><button aria-label={`Excluir ${item.name}`} onClick={() => removeSaved(item.id)}><Icon name="close"/></button></li>)}</ul> : <div className="drawer-empty"><Icon name="bookmark"/><p>As estratégias que você salvar aparecerão aqui.</p></div>}</aside>}
+    {savedArticlesOpen && <aside className="saved-drawer saved-articles-drawer"><div><span className="eyebrow">Sua biblioteca</span><button aria-label="Fechar" onClick={() => setSavedArticlesOpen(false)}><Icon name="close"/></button></div><h2>Artigos salvos</h2>{savedArticles.length ? <ul>{savedArticles.map((article) => <li key={article.pmid}><a href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`} target="_blank" rel="noreferrer"><b>{article.translatedTitle || article.title}</b><small>{article.journalAbbreviation || article.journal}{article.publicationDate ? ` · ${article.publicationDate}` : ''}</small></a><button aria-label={`Remover ${article.title} dos artigos salvos`} title="Remover dos artigos salvos" onClick={() => removeSavedArticle(article.pmid)}><Icon name="close"/></button></li>)}</ul> : <div className="drawer-empty"><Icon name="articles"/><p>Salve artigos diretamente na tabela de resultados.</p></div>}</aside>}
     <main id="top">
       <section className="hero"><div className="hero-copy"><h1>Pesquisa PubMed</h1><div className="hero-status"><span><i/> PubMed conectado</span><span>{journals.length ? `${journals.length.toLocaleString('pt-BR')} revistas` : 'Catálogo NLM'}</span></div></div><div className="hero-art" aria-hidden="true"><div className="radar"><span/><span/><span/><i/><b/></div><div className="data-trace trace-a"/><div className="data-trace trace-b"/></div></section>
       <SearchBuilder journals={journals} filters={filters} query={query} busy={busy} onChange={setFilters} onSearch={() => performSearch()} onClear={clearSearch} onSave={openSave}/>
       {error && <div className="search-error" role="alert"><Icon name="info"/><span><b>Não foi possível concluir a pesquisa.</b>{error}</span><button onClick={() => setError('')}><Icon name="close"/></button></div>}
-      {result ? <Results result={result} searchRevision={searchRevision} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page, undefined, result.query)} onArticleUpdate={updateArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
+      {result ? <Results result={result} searchRevision={searchRevision} sortMode={filters.sort} onSortMode={changeSortMode} onPage={(page) => performSearch(page, undefined, result.query)} onArticleUpdate={updateArticle} savedArticleIds={savedArticles.map((article) => article.pmid)} onToggleSavedArticle={toggleArticle}/> : <section className="empty-guide"><div className="guide-orbit"><Icon name="search"/></div><div><h2>Defina os filtros e pesquise.</h2><p>A consulta PubMed permanece visível antes do envio.</p></div></section>}
     </main>
     <footer className="app-footer"><span>Atlas Médico v2</span><span>Dados bibliográficos fornecidos pela NCBI · não substitui avaliação clínica</span></footer>
     {saveOpen && createPortal(<div className="modal-layer notranslate" translate="no" onMouseDown={(event) => { if (event.target === event.currentTarget) setSaveOpen(false); }}><section className="save-dialog" role="dialog" aria-modal="true" aria-labelledby="save-title"><div className="dialog-head"><div><h2 id="save-title">Salvar busca</h2></div><button className="dialog-close" aria-label="Fechar" onClick={() => setSaveOpen(false)}><Icon name="close"/></button></div><label>Nome<input autoFocus value={saveName} onChange={(event) => setSaveName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') saveCurrent(); }}/></label><div className="save-summary">{filterSummary(filters)} · {filters.keywords.length} termos · {filters.authors.length} autores · {filters.journalIds.length || 'todas as'} revistas</div><div className="dialog-footer"><button className="button ghost" onClick={() => setSaveOpen(false)}>Cancelar</button><button className="button primary" onClick={saveCurrent}>Salvar</button></div></section></div>, document.body)}
